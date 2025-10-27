@@ -6,12 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend } from "@/components/ui/chart";
 
-import {
-  callsByTypeChartData,
-  callsByTypeChartConfig,
-  aiActivityChartData,
-  aiActivityChartConfig,
-} from "./crm.config";
+import { callsByTypeChartData, callsByTypeChartConfig, aiActivityChartData, aiActivityChartConfig } from "./crm.config";
 
 export function InsightCards() {
   const totalCalls = callsByTypeChartData.reduce((acc, curr) => acc + curr.calls, 0);

@@ -37,9 +37,7 @@ export function OperationalCards() {
       <Card>
         <CardHeader>
           <CardTitle>Messages by Platform</CardTitle>
-          <CardDescription className="font-medium tabular-nums">
-            {totalMessages} total messages
-          </CardDescription>
+          <CardDescription className="font-medium tabular-nums">{totalMessages} total messages</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2.5">
@@ -48,9 +46,7 @@ export function OperationalCards() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{platform.platform}</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-semibold tabular-nums">
-                      {platform.messages}
-                    </span>
+                    <span className="text-sm font-semibold tabular-nums">{platform.messages}</span>
                     <span
                       className={cn(
                         "text-xs font-medium tabular-nums",

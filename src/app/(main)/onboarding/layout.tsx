@@ -6,7 +6,7 @@ import Silk from "@/components/silk";
 import { Separator } from "@/components/ui/separator";
 import { APP_CONFIG } from "@/config/app-config";
 
-export default function Layout({ children }: Readonly<{ children: ReactNode }>) {
+export default function OnboardingLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <main>
       <div className="grid h-dvh justify-center p-2 lg:grid-cols-2">
@@ -41,7 +41,7 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
             </div>
           </div>
         </div>
-        <div className="relative order-1 flex h-full">{children}</div>
+        <div className="relative order-1 flex h-full items-center justify-center">{children}</div>
       </div>
     </main>
   );

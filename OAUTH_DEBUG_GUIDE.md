@@ -3,19 +3,24 @@
 ## Quick Debug Steps
 
 ### 1. Check the Debug Page
+
 Visit `http://localhost:3000/auth/debug` to see:
+
 - URL parameters received
 - Current session status
 - User authentication status
 - Environment variables
 
 ### 2. Check Browser Console
+
 Open browser dev tools and look for:
+
 - OAuth redirect errors
 - Network request failures
 - Console error messages
 
 ### 3. Check Supabase Logs
+
 1. Go to your Supabase dashboard
 2. Navigate to **Logs > Auth**
 3. Look for error messages during OAuth attempts
@@ -25,11 +30,13 @@ Open browser dev tools and look for:
 ### Issue 1: "callback_error" - OAuth Callback Failing
 
 **Possible Causes:**
+
 1. **Wrong redirect URL in Supabase**
 2. **Missing Google OAuth configuration**
 3. **Environment variables not set**
 
 **Solution:**
+
 1. **Check Supabase Dashboard:**
    - Go to **Authentication > Settings > URL Configuration**
    - Ensure these URLs are added:
@@ -52,6 +59,7 @@ Open browser dev tools and look for:
 ### Issue 2: OAuth Redirects to Wrong URL
 
 **Check Google Cloud Console:**
+
 1. Go to **APIs & Services > Credentials**
 2. Edit your OAuth 2.0 Client ID
 3. **Authorized redirect URIs** should include:
@@ -62,18 +70,22 @@ Open browser dev tools and look for:
 ### Issue 3: Session Not Persisting
 
 **Check Middleware Configuration:**
+
 - Ensure middleware is not interfering with auth flow
 - Check if cookies are being set correctly
 
 ## Step-by-Step Debugging
 
 ### Step 1: Test OAuth URL Manually
+
 Try accessing this URL directly (replace with your project URL):
+
 ```
 https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=http://localhost:3000/auth/callback
 ```
 
 ### Step 2: Check Network Tab
+
 1. Open browser dev tools
 2. Go to Network tab
 3. Try Google OAuth
@@ -82,7 +94,9 @@ https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=h
    - `http://localhost:3000/auth/callback`
 
 ### Step 3: Verify Supabase Configuration
+
 1. **Authentication > Settings > URL Configuration:**
+
    ```
    http://localhost:3000/auth/callback
    https://yourdomain.com/auth/callback
@@ -94,6 +108,7 @@ https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=h
    - Client Secret: ✅ Set
 
 ### Step 4: Test with Debug Page
+
 1. Go to `http://localhost:3000/auth/debug`
 2. Check if environment variables are set
 3. Try OAuth and see what parameters are received
@@ -112,22 +127,26 @@ https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=h
 ## Quick Fixes
 
 ### Fix 1: Update Supabase Redirect URLs
+
 ```
 http://localhost:3000/auth/callback
 https://yourdomain.com/auth/callback
 ```
 
 ### Fix 2: Update Google OAuth Settings
+
 ```
 Authorized redirect URIs:
 https://your-project.supabase.co/auth/v1/callback
 ```
 
 ### Fix 3: Clear Browser Data
+
 - Clear cookies and cache
 - Try in incognito mode
 
 ### Fix 4: Restart Development Server
+
 ```bash
 npm run dev
 ```
@@ -143,6 +162,7 @@ npm run dev
 ## Production Considerations
 
 For production:
+
 1. **Update all URLs** to use your production domain
 2. **Update Google OAuth settings** with production URLs
 3. **Ensure HTTPS** is enabled

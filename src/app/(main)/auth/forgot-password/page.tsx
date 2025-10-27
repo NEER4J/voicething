@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
+import Link from "next/link";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useState } from "react";
-import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -30,9 +32,9 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
-    
+
     const { error } = await resetPassword(data.email);
-    
+
     if (error) {
       toast.error("Failed to send reset email", {
         description: error,
@@ -43,7 +45,7 @@ export default function ForgotPasswordPage() {
         description: "Please check your email for password reset instructions.",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -84,13 +86,7 @@ export default function ForgotPasswordPage() {
               <FormItem>
                 <FormLabel>Email Address</FormLabel>
                 <FormControl>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="you@example.com" 
-                    autoComplete="email" 
-                    {...field} 
-                  />
+                  <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -102,10 +98,7 @@ export default function ForgotPasswordPage() {
         </form>
       </Form>
       <div className="text-center">
-        <Link 
-          href="/auth/login" 
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href="/auth/login" className="text-muted-foreground hover:text-foreground text-sm">
           Back to Login
         </Link>
       </div>

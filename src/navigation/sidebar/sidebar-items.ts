@@ -1,20 +1,4 @@
-import {
-  LayoutDashboard,
-  Phone,
-  PhoneCall,
-  Voicemail,
-  MessageSquare,
-  Smartphone,
-  Send,
-  Users,
-  User,
-  CheckSquare,
-  Calendar,
-  Brain,
-  FileText,
-  Settings,
-  type LucideIcon,
-} from "lucide-react";
+import { LayoutDashboard, Phone, MessageSquare, Users, CheckSquare, Brain, type LucideIcon } from "lucide-react";
 
 export interface NavSubItem {
   title: string;
@@ -85,11 +69,6 @@ export const sidebarItems: NavGroup[] = [
         title: "AI Recap",
         url: "/dashboard/ai-recap",
         icon: Brain,
-      },
-      {
-        title: "Settings",
-        url: "/dashboard/settings",
-        icon: Settings,
       },
     ],
   },

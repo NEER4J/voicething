@@ -1,12 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -40,9 +42,9 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     // Check if we have the necessary tokens in the URL
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
+    const accessToken = searchParams.get("access_token");
+    const refreshToken = searchParams.get("refresh_token");
+
     if (accessToken && refreshToken) {
       setIsValidToken(true);
     } else {
@@ -54,9 +56,9 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
-    
+
     const { error } = await updatePassword(data.password);
-    
+
     if (error) {
       toast.error("Failed to update password", {
         description: error,
@@ -67,7 +69,7 @@ export default function ResetPasswordPage() {
       });
       router.push("/auth/login");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -76,15 +78,11 @@ export default function ResetPasswordPage() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-medium">Invalid Reset Link</h1>
-          <p className="text-muted-foreground text-sm">
-            This password reset link is invalid or has expired.
-          </p>
+          <p className="text-muted-foreground text-sm">This password reset link is invalid or has expired.</p>
         </div>
         <div className="space-y-4">
           <Link href="/auth/forgot-password">
-            <Button className="w-full">
-              Request New Reset Link
-            </Button>
+            <Button className="w-full">Request New Reset Link</Button>
           </Link>
           <Link href="/auth/login">
             <Button className="w-full" variant="outline">
@@ -100,9 +98,7 @@ export default function ResetPasswordPage() {
     <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-medium">Reset your password</h1>
-        <p className="text-muted-foreground text-sm">
-          Enter your new password below.
-        </p>
+        <p className="text-muted-foreground text-sm">Enter your new password below.</p>
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -113,13 +109,7 @@ export default function ResetPasswordPage() {
               <FormItem>
                 <FormLabel>New Password</FormLabel>
                 <FormControl>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    autoComplete="new-password" 
-                    {...field} 
-                  />
+                  <Input id="password" type="password" placeholder="••••••••" autoComplete="new-password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -132,12 +122,12 @@ export default function ResetPasswordPage() {
               <FormItem>
                 <FormLabel>Confirm New Password</FormLabel>
                 <FormControl>
-                  <Input 
-                    id="confirmPassword" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    autoComplete="new-password" 
-                    {...field} 
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
@@ -150,10 +140,7 @@ export default function ResetPasswordPage() {
         </form>
       </Form>
       <div className="text-center">
-        <Link 
-          href="/auth/login" 
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href="/auth/login" className="text-muted-foreground hover:text-foreground text-sm">
           Back to Login
         </Link>
       </div>

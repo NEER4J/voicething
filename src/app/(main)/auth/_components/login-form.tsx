@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,9 +38,9 @@ export function LoginForm() {
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
-    
+
     const { error } = await signIn(data.email, data.password);
-    
+
     if (error) {
       toast.error("Login failed", {
         description: error,
@@ -49,7 +51,7 @@ export function LoginForm() {
       });
       router.push("/dashboard");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -108,10 +110,7 @@ export function LoginForm() {
           )}
         />
         <div className="flex items-center justify-between">
-          <Link 
-            href="/auth/forgot-password" 
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
+          <Link href="/auth/forgot-password" className="text-muted-foreground hover:text-foreground text-sm">
             Forgot password?
           </Link>
         </div>

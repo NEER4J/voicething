@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import { BadgeCheck, Bell, CreditCard, LogOut } from "lucide-react";
+import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,8 +16,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { cn, getInitials } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/use-auth";
+import { cn, getInitials } from "@/lib/utils";
 
 export function AccountSwitcher({
   users,
@@ -35,7 +36,7 @@ export function AccountSwitcher({
 
   const handleSignOut = async () => {
     const { error } = await signOut();
-    
+
     if (error) {
       toast.error("Failed to sign out", {
         description: error,

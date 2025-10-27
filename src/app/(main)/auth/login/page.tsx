@@ -2,10 +2,9 @@ import Link from "next/link";
 
 import { Globe } from "lucide-react";
 
-import { APP_CONFIG } from "@/config/app-config";
-
 import { LoginForm } from "@/app/(main)/auth/_components/login-form";
 import { GoogleButton } from "@/app/(main)/auth/_components/social-auth/google-button";
+import { APP_CONFIG } from "@/config/app-config";
 
 export default function LoginV2() {
   return (

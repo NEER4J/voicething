@@ -12,6 +12,7 @@ This error occurs when the OAuth callback fails. Here are the most common causes
 
 1. **Go to Authentication > Settings > URL Configuration**
 2. **Add these redirect URLs:**
+
    ```
    http://localhost:3000/auth/callback
    https://yourdomain.com/auth/callback
@@ -41,6 +42,7 @@ This error occurs when the OAuth callback fails. Here are the most common causes
 #### C. Environment Variables
 
 **Check your `.env.local` file:**
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -49,20 +51,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ### 2. Debug Steps
 
 #### Step 1: Check Browser Console
+
 Open browser dev tools and look for errors when clicking "Continue with Google"
 
 #### Step 2: Check Network Tab
+
 Look for failed requests to:
+
 - `https://your-project.supabase.co/auth/v1/authorize`
 - `http://localhost:3000/auth/callback`
 
 #### Step 3: Check Supabase Logs
+
 1. Go to your Supabase dashboard
 2. Navigate to **Logs > Auth**
 3. Look for error messages during OAuth attempts
 
 #### Step 4: Test OAuth URL
+
 Try accessing this URL directly (replace with your project URL):
+
 ```
 https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=http://localhost:3000/auth/callback
 ```
@@ -70,17 +78,20 @@ https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=h
 ### 3. Common Configuration Mistakes
 
 #### ❌ Wrong Redirect URL in Supabase
+
 ```
 ❌ http://localhost:3000/auth/callback
 ✅ https://your-project.supabase.co/auth/v1/callback
 ```
 
 #### ❌ Missing Google OAuth Setup
+
 - Google OAuth app not created
 - Client ID/Secret not added to Supabase
 - OAuth consent screen not configured
 
 #### ❌ Domain Mismatch
+
 - Google OAuth app domain doesn't match your app
 - Authorized origins don't include your domain
 
@@ -101,6 +112,7 @@ https://your-project.supabase.co/auth/v1/authorize?provider=google&redirect_to=h
 7. **Authorized redirect URIs:**
    ```
    https://your-project.supabase.co/auth/v1/callback
+   ```
 8. **Save and copy Client ID and Client Secret**
 
 #### B. Supabase Dashboard Setup
@@ -132,24 +144,24 @@ If the issue persists, try this debug version of the Google button:
 ```tsx
 const handleGoogleSignIn = async () => {
   setIsLoading(true);
-  
+
   try {
-    console.log('Starting Google OAuth...');
+    console.log("Starting Google OAuth...");
     const { error } = await signInWithGoogle();
-    
+
     if (error) {
       console.error("Google sign-in error:", error);
       toast.error("Google sign-in failed", {
         description: error,
       });
     } else {
-      console.log('Google OAuth initiated successfully');
+      console.log("Google OAuth initiated successfully");
     }
   } catch (err) {
-    console.error('Unexpected error:', err);
+    console.error("Unexpected error:", err);
     toast.error("An unexpected error occurred");
   }
-  
+
   setIsLoading(false);
 };
 ```

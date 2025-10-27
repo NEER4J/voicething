@@ -1,5 +1,3 @@
-/* eslint-disable max-lines */
-
 import { ChartConfig } from "@/components/ui/chart";
 
 export const callsChartData = [
@@ -90,9 +88,9 @@ export const callsByTypeChartConfig = {
 export const aiActivityChartData = [
   { activity: "AI Summaries Generated", count: 47 },
   { activity: "AI Replies Sent", count: 23 },
-  { activity: "Follow-ups Created", count: 12 },
-  { activity: "Voicemails Transcribed", count: 8 },
-  { activity: "Callbacks Scheduled", count: 5 },
+  { activity: "Follow-ups Created", count: 34 },
+  { activity: "Voicemails Transcribed", count: 30 },
+  { activity: "Callbacks Scheduled", count: 45 },
   { activity: "Insights Generated", count: 15 },
 ];
 
