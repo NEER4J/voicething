@@ -14,9 +14,9 @@ import { BusinessInfoStep } from "./_components/business-info-step";
 import { ChannelsStep } from "./_components/channels-step";
 import { OnboardingProgress } from "./_components/onboarding-progress";
 import { PhoneSetupStep } from "./_components/phone-setup-step";
+import { TestAssistantStep } from "./_components/test-assistant-step";
 import { VoiceSelectionStep } from "./_components/voice-selection-step";
 import { WelcomeStep } from "./_components/welcome-step";
-import { TestAssistantStep } from "./_components/test-assistant-step";
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(OnboardingStep.WELCOME);
@@ -76,11 +76,16 @@ export default function OnboardingPage() {
         }
       }
 
-      // Move to next step
+      // Check if this is the last step
       const nextIndex = currentStepIndex + 1;
-      if (nextIndex < stepOrder.length) {
-        setCurrentStep(stepOrder[nextIndex]);
+      if (nextIndex >= stepOrder.length) {
+        // This is the last step, complete onboarding
+        await handleComplete();
+        return;
       }
+
+      // Move to next step
+      setCurrentStep(stepOrder[nextIndex]);
     } catch (error) {
       toast.error("Failed to save data");
     } finally {
@@ -97,11 +102,16 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = async () => {
-    // Move to next step without saving data
+    // Check if this is the last step
     const nextIndex = currentStepIndex + 1;
-    if (nextIndex < stepOrder.length) {
-      setCurrentStep(stepOrder[nextIndex]);
+    if (nextIndex >= stepOrder.length) {
+      // This is the last step, complete onboarding
+      await handleComplete();
+      return;
     }
+
+    // Move to next step without saving data
+    setCurrentStep(stepOrder[nextIndex]);
   };
 
   const handleComplete = async () => {
@@ -215,9 +225,7 @@ export default function OnboardingPage() {
   return (
     <div className="flex min-h-full flex-col items-center justify-center p-4">
       <OnboardingProgress currentStep={currentStep} />
-      <div className="relative mt-8 w-full max-w-md rounded-lg border bg-background p-8 shadow-lg">
-        {renderCurrentStep()}
-      </div>
+      <div className="relative mt-8 w-full max-w-md">{renderCurrentStep()}</div>
     </div>
   );
 }

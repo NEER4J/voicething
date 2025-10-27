@@ -53,25 +53,11 @@ export function ChannelsStep({ onNext, onSkip, onBack, initialData, isLoading }:
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                  <MessageCircle className="size-5 text-green-600" />
-                </div>
                 <div>
                   <CardTitle className="text-base">WhatsApp Business</CardTitle>
                   <CardDescription className="text-sm">Connect your WhatsApp Business account</CardDescription>
                 </div>
               </div>
-              {whatsappConnected ? (
-                <Badge variant="secondary" className="gap-1">
-                  <CheckCircle className="size-3" />
-                  Connected
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="gap-1">
-                  <Settings className="size-3" />
-                  Setup Pending
-                </Badge>
-              )}
             </div>
           </CardHeader>
           <CardContent className="pt-0">
@@ -92,25 +78,11 @@ export function ChannelsStep({ onNext, onSkip, onBack, initialData, isLoading }:
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                  <Send className="size-5 text-blue-600" />
-                </div>
                 <div>
                   <CardTitle className="text-base">Telegram Bot</CardTitle>
                   <CardDescription className="text-sm">Connect your Telegram bot</CardDescription>
                 </div>
               </div>
-              {telegramConnected ? (
-                <Badge variant="secondary" className="gap-1">
-                  <CheckCircle className="size-3" />
-                  Connected
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="gap-1">
-                  <Settings className="size-3" />
-                  Setup Pending
-                </Badge>
-              )}
             </div>
           </CardHeader>
           <CardContent className="pt-0">

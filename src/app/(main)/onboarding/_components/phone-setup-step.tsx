@@ -28,14 +28,14 @@ function OptionSelection({ onSelect }: { onSelect: (option: "new" | "existing") 
   return (
     <div className="space-y-3">
       <Card className="hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => onSelect("new")}>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-0">
           <CardTitle className="text-base">Get a New Number</CardTitle>
           <CardDescription className="text-sm">We&apos;ll provide you with a dedicated AI phone number</CardDescription>
         </CardHeader>
       </Card>
 
       <Card className="hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => onSelect("existing")}>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-0">
           <CardTitle className="text-base">Bring Your Own Number</CardTitle>
           <CardDescription className="text-sm">Port or forward your existing business line</CardDescription>
         </CardHeader>
@@ -164,7 +164,9 @@ function PhoneSetupContent({
   );
 }
 
-function usePhoneSetupState(initialData?: Partial<{ phone_option: "new" | "existing"; phone_country_code: string; phone_area_code: string }>) {
+function usePhoneSetupState(
+  initialData?: Partial<{ phone_option: "new" | "existing"; phone_country_code: string; phone_area_code: string }>,
+) {
   const [selectedOption, setSelectedOption] = useState<"new" | "existing" | null>(initialData?.phone_option ?? null);
   const [countryCode] = useState(initialData?.phone_country_code ?? "+1");
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(PHONE_NUMBERS[0]);
@@ -198,7 +200,8 @@ function usePhoneSetupState(initialData?: Partial<{ phone_option: "new" | "exist
 }
 
 export function PhoneSetupStep({ onNext, onSkip, onBack, initialData, isLoading }: PhoneSetupStepProps) {
-  const { selectedOption, handleOptionSelect, selectedPhoneNumber, setSelectedPhoneNumber, isCompleted, getPhoneData } = usePhoneSetupState(initialData);
+  const { selectedOption, handleOptionSelect, selectedPhoneNumber, setSelectedPhoneNumber, isCompleted, getPhoneData } =
+    usePhoneSetupState(initialData);
 
   const handleContinue = () => {
     onNext(getPhoneData());

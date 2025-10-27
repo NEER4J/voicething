@@ -21,7 +21,7 @@ export function OnboardingProgress({ currentStep }: OnboardingProgressProps) {
   const progress = ((currentIndex + 1) / stepOrder.length) * 100;
 
   return (
-    <div className="space-y-2">
+    <div className="w-full space-y-2">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
           Step {currentIndex + 1} of {stepOrder.length}

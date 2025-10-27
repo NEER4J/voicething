@@ -15,13 +15,7 @@ interface TestAssistantStepProps {
   isLoading?: boolean;
 }
 
-export function TestAssistantStep({
-  onNext,
-  onSkip,
-  onBack,
-  initialData,
-  isLoading,
-}: TestAssistantStepProps) {
+export function TestAssistantStep({ onNext, onSkip, onBack, initialData, isLoading }: TestAssistantStepProps) {
   const [isTesting, setIsTesting] = useState(false);
   const [testCompleted, setTestCompleted] = useState(initialData?.test_call_completed ?? false);
   const [showTranscript, setShowTranscript] = useState(initialData?.test_call_completed ?? false);
@@ -84,56 +78,6 @@ export function TestAssistantStep({
               <span className="text-sm text-green-800">Test call completed successfully!</span>
             </div>
 
-            {showTranscript && (
-              <Card className="border">
-                <CardHeader>
-                  <CardTitle className="text-base">Live Transcript & Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="text-muted-foreground mt-1 size-4" />
-                      <div className="text-sm">
-                        <p className="font-medium">AI Assistant:</p>
-                        <p className="text-muted-foreground">
-                          &quot;Hello! Thank you for calling. I&apos;m your AI assistant. How can I help you
-                          today?&quot;
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="text-muted-foreground mt-1 size-4" />
-                      <div className="text-sm">
-                        <p className="font-medium">You:</p>
-                        <p className="text-muted-foreground">
-                          &quot;I&apos;d like to know more about your services.&quot;
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="text-muted-foreground mt-1 size-4" />
-                      <div className="text-sm">
-                        <p className="font-medium">AI Assistant:</p>
-                        <p className="text-muted-foreground">
-                          &quot;I&apos;d be happy to help! Let me connect you with our team for more information.&quot;
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 rounded-md p-3">
-                    <p className="text-sm font-medium">AI Summary:</p>
-                    <p className="text-muted-foreground text-sm">
-                      Customer inquiry about services. Interest level: High. Recommended action: Schedule follow-up
-                      call.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             <div className="bg-primary/5 border-primary/20 rounded-md border p-4">
               <h3 className="text-primary mb-2 font-medium">Your AI Assistant is live and ready!</h3>
               <p className="text-primary/80 text-sm">
@@ -145,7 +89,12 @@ export function TestAssistantStep({
               <Button variant="outline" onClick={onBack}>
                 Back
               </Button>
-              <Button onClick={() => onNext({ test_call_completed: true })} className="flex-1" size="lg" disabled={isLoading}>
+              <Button
+                onClick={() => onNext({ test_call_completed: true })}
+                className="flex-1"
+                size="lg"
+                disabled={isLoading}
+              >
                 {isLoading ? "Completing..." : "Complete Setup"}
               </Button>
             </div>

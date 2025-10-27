@@ -60,17 +60,20 @@ export function VoiceSelectionStep({ onNext, onSkip, onBack, initialData, isLoad
                 }`}
                 onClick={() => setSelectedVoice(voice.id)}
               >
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-0">
                   <div className="flex flex-col items-center space-y-2 text-center">
-                    <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
-                      <Volume2 className="text-primary size-6" />
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
+                        <Volume2 className="text-primary size-6" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <CardTitle className="text-sm">{voice.name}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {voice.gender} • {voice.tone}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-sm">{voice.name}</CardTitle>
-                      <CardDescription className="text-xs">
-                        {voice.gender} • {voice.tone}
-                      </CardDescription>
-                    </div>
+
                     <Button
                       size="sm"
                       variant="outline"
@@ -108,15 +111,6 @@ export function VoiceSelectionStep({ onNext, onSkip, onBack, initialData, isLoad
             </SelectContent>
           </Select>
         </div>
-
-        {selectedVoiceModel && (
-          <div className="bg-muted/50 rounded-md p-3">
-            <p className="text-muted-foreground text-sm">
-              Selected: <span className="font-medium">{selectedVoiceModel.name}</span> ({selectedVoiceModel.gender},{" "}
-              {selectedTone})
-            </p>
-          </div>
-        )}
 
         <div className="flex gap-3 pt-4">
           <Button variant="outline" onClick={onBack}>
