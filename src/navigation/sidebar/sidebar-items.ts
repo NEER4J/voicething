@@ -1,4 +1,4 @@
-import { LayoutDashboard, Phone, MessageSquare, Users, CheckSquare, Brain, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Phone, MessageSquare, Users, CheckSquare, Brain, Bot, type LucideIcon } from "lucide-react";
 
 export interface NavSubItem {
   title: string;
@@ -34,6 +34,15 @@ export const sidebarItems: NavGroup[] = [
         title: "Dashboard",
         url: "/dashboard",
         icon: LayoutDashboard,
+      },
+      {
+        title: "AI Agents",
+        url: "/dashboard/ai-agents",
+        icon: Bot,
+        subItems: [
+          { title: "All Agents", url: "/dashboard/ai-agents" },
+          { title: "Create New", url: "/dashboard/ai-agents/setup" },
+        ],
       },
       {
         title: "Calls",
