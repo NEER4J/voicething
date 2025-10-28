@@ -65,9 +65,12 @@ async function handleUserEmailCheck(supabase: any, authUserId: string, userEmail
 async function createNewUser(supabase: any, authUserId: string, userEmail: string, userName: string) {
   const { error } = await supabase.from("users").insert({
     id: authUserId,
+    name: userName || "User", // name is required in schema
     email: userEmail,
-    name: userName,
+    phone: null,
+    call_count: 0,
     auth_user_id: authUserId,
+    preferred_mode: null,
     onboarding_completed: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

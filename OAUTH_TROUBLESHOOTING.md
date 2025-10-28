@@ -2,7 +2,38 @@
 
 ## Common Issues and Solutions
 
-### 1. "callback_error" when using Google OAuth
+### 1. "new row violates row-level security policy for table 'users'" Error
+
+This is the most common error and means your database RLS policies are blocking user creation.
+
+**Symptoms:**
+- OAuth authentication succeeds
+- User is redirected back to login page
+- Console shows error: `Error creating user record: { code: '42501', message: 'new row violates row-level security policy for table "users"' }`
+
+**Solution:**
+
+1. **Run the database migration:**
+   - Go to your Supabase dashboard
+   - Navigate to **SQL Editor**
+   - Open the `supabase-migrations.sql` file from your project
+   - Copy and paste the entire SQL into the editor
+   - Click **Run** or press `Ctrl+Enter`
+
+2. **Verify RLS policies are created:**
+   - Go to **Database** > **Tables** > **users**
+   - Click on **Policies** tab
+   - You should see policies like:
+     - "Users can view their own profile"
+     - "Users can insert their own profile"
+     - "Users can update their own profile"
+
+3. **Test again:**
+   - Clear browser cache and cookies
+   - Try Google OAuth sign-in again
+   - Should now redirect to `/onboarding` or `/dashboard`
+
+### 2. "callback_error" when using Google OAuth
 
 This error occurs when the OAuth callback fails. Here are the most common causes and solutions:
 

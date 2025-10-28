@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -88,6 +89,12 @@ function transformUserData(user: any) {
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   // Require authentication
   const user = await requireAuth();
+
+  // Check onboarding status and redirect if not completed
+  const isOnboardingCompleted = await checkOnboardingStatus(user.id);
+  if (!isOnboardingCompleted) {
+    redirect("/onboarding");
+  }
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";

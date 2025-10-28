@@ -5,8 +5,11 @@ import { Command } from "lucide-react";
 import Silk from "@/components/silk";
 import { Separator } from "@/components/ui/separator";
 import { APP_CONFIG } from "@/config/app-config";
+import { requireAuth } from "@/server/auth-actions";
 
-export default function OnboardingLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function OnboardingLayout({ children }: Readonly<{ children: ReactNode }>) {
+  // Require authentication
+  await requireAuth();
   return (
     <main>
       <div className="grid h-dvh justify-center p-2 lg:grid-cols-2">

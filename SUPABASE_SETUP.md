@@ -18,6 +18,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 Replace the values with your actual Supabase project credentials.
 
+## Database Setup
+
+### 1. Run Database Migration
+
+**IMPORTANT: You must run this migration before OAuth will work!**
+
+1. Go to your Supabase dashboard
+2. Navigate to **SQL Editor**
+3. Click **New Query**
+4. Copy and paste the entire contents of `supabase-migrations.sql` file
+5. Click **Run** or press `Ctrl+Enter`
+6. Verify the migration completed successfully
+
+This migration:
+- Creates the `users` and `business_profiles` tables
+- Sets up Row-Level Security (RLS) policies
+- Configures proper permissions for OAuth user creation
+- Creates indexes for better performance
+- Sets up automatic timestamp updates
+
 ## Supabase Dashboard Configuration
 
 ### 1. Enable Email Authentication
