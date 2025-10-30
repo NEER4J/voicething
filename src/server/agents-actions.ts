@@ -484,3 +484,196 @@ export async function completeDraftAgent(
     return { success: false, error: "Failed to complete agent setup" };
   }
 }
+
+// Save agent transcript
+export async function saveAgentTranscript(
+  authUserId: string,
+  agentId: string,
+  payload: {
+    callId?: string;
+    transcriptText: string;
+    segments: Array<{
+      role: "user" | "assistant";
+      text: string;
+      isFinal: boolean;
+      startedAt?: string;
+      endedAt?: string;
+    }>;
+    durationSeconds?: number;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const userId = await getOrCreateUserRecord(authUserId);
+
+    // Ensure the agent belongs to the user
+    const { data: agentRow, error: fetchError } = await supabase
+      .from("ai_agents")
+      .select("id, user_id")
+      .eq("id", agentId)
+      .single();
+
+    if (fetchError || !agentRow || agentRow.user_id !== userId) {
+      return { success: false, error: "Agent not found or access denied" };
+    }
+
+    const { error: insertError } = await supabase.from("ai_agent_transcripts").insert({
+      agent_id: agentId,
+      user_id: userId,
+      call_id: payload.callId ?? null,
+      transcript_text: payload.transcriptText,
+      transcript_json: payload.segments as unknown as Record<string, unknown>,
+      duration_seconds: payload.durationSeconds ?? null,
+      created_at: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.error("Error saving transcript:", insertError);
+      return { success: false, error: insertError.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving transcript:", error);
+    return { success: false, error: "Failed to save transcript" };
+  }
+}
+
+export async function getVapiCallTranscript(
+  authUserId: string,
+  agentId: string,
+  callId: string,
+): Promise<{ success: boolean; transcript?: unknown[]; messages?: unknown[]; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const userId = await getOrCreateUserRecord(authUserId);
+
+    // Verify user owns this agent
+    const { data: agentRow, error: fetchError } = await supabase
+      .from("ai_agents")
+      .select("id, user_id")
+      .eq("id", agentId)
+      .single();
+
+    if (fetchError || !agentRow || agentRow.user_id !== userId) {
+      return { success: false, error: "Agent not found or access denied" };
+    }
+
+    const vapiToken = process.env.VAPI_API_KEY;
+    if (!vapiToken) {
+      return { success: false, error: "Vapi API key not configured" };
+    }
+
+    // Fetch call details from Vapi
+    const response = await fetch(`https://api.vapi.ai/call/${callId}`, {
+      headers: {
+        Authorization: `Bearer ${vapiToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Failed to fetch call: ${response.statusText}` };
+    }
+
+    const call = (await response.json()) as {
+      artifact?: { transcript?: unknown[]; messages?: unknown[] };
+    };
+    const transcript = call?.artifact?.transcript ?? [];
+    const messages = call?.artifact?.messages ?? [];
+
+    return { success: true, transcript, messages };
+  } catch (error) {
+    console.error("Error fetching Vapi transcript:", error);
+    return { success: false, error: "Failed to fetch transcript from Vapi" };
+  }
+}
+
+export async function getAgentCallHistory(
+  authUserId: string,
+  agentId: string,
+): Promise<{
+  success: boolean;
+  calls?: Array<{
+    id: string;
+    call_id: string | null;
+    transcript_text: string | null;
+    transcript_json: unknown | null;
+    duration_seconds: number | null;
+    created_at: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const userId = await getOrCreateUserRecord(authUserId);
+
+    // Ensure the agent belongs to the user
+    const { data: agentRow, error: fetchError } = await supabase
+      .from("ai_agents")
+      .select("id, user_id")
+      .eq("id", agentId)
+      .single();
+
+    if (fetchError || !agentRow || agentRow.user_id !== userId) {
+      return { success: false, error: "Agent not found or access denied" };
+    }
+
+    const { data, error } = await supabase
+      .from("ai_agent_transcripts")
+      .select("id, call_id, transcript_text, transcript_json, duration_seconds, created_at")
+      .eq("agent_id", agentId)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, calls: data ?? [] };
+  } catch (error) {
+    console.error("Error fetching call history:", error);
+    return { success: false, error: "Failed to fetch call history" };
+  }
+}
+
+export async function endVapiCall(
+  authUserId: string,
+  agentId: string,
+  callId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const userId = await getOrCreateUserRecord(authUserId);
+
+    // Verify agent ownership
+    const { data: agentRow, error: fetchError } = await supabase
+      .from("ai_agents")
+      .select("id, user_id")
+      .eq("id", agentId)
+      .single();
+
+    if (fetchError || !agentRow || agentRow.user_id !== userId) {
+      return { success: false, error: "Agent not found or access denied" };
+    }
+
+    const vapiToken = process.env.VAPI_API_KEY;
+    if (!vapiToken) {
+      return { success: false, error: "Vapi API key not configured" };
+    }
+
+    const resp = await fetch(`https://api.vapi.ai/call/${callId}/end`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${vapiToken}` },
+    });
+
+    if (!resp.ok) {
+      return { success: false, error: `Failed to end call: ${resp.status} ${resp.statusText}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error ending Vapi call:", error);
+    return { success: false, error: "Failed to end call" };
+  }
+}

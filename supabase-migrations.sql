@@ -195,3 +195,25 @@ GRANT SELECT ON public.users TO anon;
 -- Run this SQL in your Supabase SQL Editor
 -- After running, test the OAuth flow again
 
+-- ============================================
+-- 5. AI AGENT TRANSCRIPTS TABLE
+-- ============================================
+
+-- Create ai_agent_transcripts table if not exists
+CREATE TABLE IF NOT EXISTS public.ai_agent_transcripts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id UUID NOT NULL REFERENCES public.ai_agents(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  call_id TEXT,
+  transcript_text TEXT NOT NULL,
+  transcript_json JSONB,
+  duration_seconds INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_agent_transcripts_agent_id ON public.ai_agent_transcripts(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_transcripts_user_id ON public.ai_agent_transcripts(user_id);
+
