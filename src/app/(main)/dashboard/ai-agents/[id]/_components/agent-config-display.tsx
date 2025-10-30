@@ -46,6 +46,15 @@ export function AgentConfigDisplay({ agent, businessType, language, tone }: Agen
           </div>
         </>
       )}
+      {agent.system_prompt && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <span className="text-muted-foreground text-sm">System Prompt</span>
+            <p className="bg-muted rounded-md p-3 text-sm whitespace-pre-wrap">{agent.system_prompt}</p>
+          </div>
+        </>
+      )}
     </>
   );
 }

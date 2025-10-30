@@ -10,6 +10,7 @@ export interface Agent {
   voice_id: string;
   voice_name: string;
   greeting_message?: string;
+  system_prompt?: string;
   vapi_assistant_id?: string;
   is_active: boolean;
   created_at: string;
@@ -24,6 +25,7 @@ export interface AgentFormData {
   voice_id: string;
   voice_name: string;
   greeting_message: string;
+  system_prompt?: string;
 }
 
 export type BusinessType = "cleaning" | "real_estate" | "clinic" | "agency" | "general";
@@ -158,4 +160,3 @@ Be professional, efficient, and help clients feel valued and understood.`,
 
 Always be helpful, courteous, and maintain a positive attitude.`,
 };
-

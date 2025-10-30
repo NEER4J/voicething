@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
 import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Agent } from "@/types/agents";
 
 interface WebCallProps {
@@ -17,11 +18,17 @@ interface VapiInstance {
   start: (assistantId: string, options?: unknown) => Promise<unknown>;
   stop: () => void;
   setMuted: (muted: boolean) => void;
-  setSpeakerMuted: (muted: boolean) => void;
+  // Some SDK versions may not expose speaker mute; treat as optional
+  setSpeakerMuted?: (muted: boolean) => void;
 }
 
 // Helper function to setup event listeners
-const setupEventListeners = (vapi: VapiInstance, setIsCallActive: (active: boolean) => void, setCallStatus: (status: string) => void, setError: (error: string | null) => void) => {
+const setupEventListeners = (
+  vapi: VapiInstance,
+  setIsCallActive: (active: boolean) => void,
+  setCallStatus: (status: string) => void,
+  setError: (error: string | null) => void,
+) => {
   vapi.on("call-start", () => {
     console.log("Call started");
     setIsCallActive(true);
@@ -50,8 +57,21 @@ const setupEventListeners = (vapi: VapiInstance, setIsCallActive: (active: boole
   });
 
   vapi.on("error", (error: unknown) => {
+    const message = (error as { message?: string }).message ?? "";
+    const text = String(error ?? "");
+    const combined = `${message} ${text}`.toLowerCase();
+
+    // Treat ejection/ended meeting as a normal end (assistant hung up)
+    if (combined.includes("ejection") || combined.includes("meeting has ended") || combined.includes("ended")) {
+      console.warn("Call ended by assistant:", error);
+      setError(null);
+      setIsCallActive(false);
+      setCallStatus("Call ended by assistant");
+      return;
+    }
+
     console.error("Voice call error:", error);
-    setError((error as { message?: string }).message ?? "An error occurred during the call");
+    setError(message || "An error occurred during the call");
     setIsCallActive(false);
     setCallStatus("Call failed");
   });
@@ -80,7 +100,14 @@ const setupEventListeners = (vapi: VapiInstance, setIsCallActive: (active: boole
 };
 
 // Helper function to handle call controls
-const handleCallControls = (vapi: VapiInstance, isCallActive: boolean, isMuted: boolean, isSpeakerMuted: boolean, setIsMuted: (muted: boolean) => void, setIsSpeakerMuted: (muted: boolean) => void) => {
+const handleCallControls = (
+  vapi: VapiInstance,
+  isCallActive: boolean,
+  isMuted: boolean,
+  isSpeakerMuted: boolean,
+  setIsMuted: (muted: boolean) => void,
+  setIsSpeakerMuted: (muted: boolean) => void,
+) => {
   const toggleMute = () => {
     if (vapi && isCallActive) {
       try {
@@ -100,6 +127,10 @@ const handleCallControls = (vapi: VapiInstance, isCallActive: boolean, isMuted: 
   const toggleSpeaker = () => {
     if (vapi && isCallActive) {
       try {
+        if (typeof vapi.setSpeakerMuted !== "function") {
+          console.warn("setSpeakerMuted is not available on Vapi instance; disabling speaker toggle.");
+          return;
+        }
         if (isSpeakerMuted) {
           vapi.setSpeakerMuted(false);
           setIsSpeakerMuted(false);
@@ -116,6 +147,7 @@ const handleCallControls = (vapi: VapiInstance, isCallActive: boolean, isMuted: 
   return { toggleMute, toggleSpeaker };
 };
 
+// eslint-disable-next-line complexity
 export function WebCall({ agent }: WebCallProps) {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -127,12 +159,12 @@ export function WebCall({ agent }: WebCallProps) {
   useEffect(() => {
     const initializeVapi = async () => {
       try {
-        if (typeof window === 'undefined') {
+        if (typeof window === "undefined") {
           return;
         }
 
         const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
-        
+
         if (!publicKey) {
           setError("Voice call system not configured. Please contact support.");
           setCallStatus("Not available");
@@ -140,7 +172,7 @@ export function WebCall({ agent }: WebCallProps) {
         }
 
         const { default: Vapi } = await import("@vapi-ai/web");
-        
+
         try {
           vapiRef.current = new Vapi(publicKey) as unknown as VapiInstance;
         } catch (initError) {
@@ -151,7 +183,6 @@ export function WebCall({ agent }: WebCallProps) {
         }
 
         setupEventListeners(vapiRef.current, setIsCallActive, setCallStatus, setError);
-
       } catch (err) {
         console.error("Failed to initialize voice call system:", err);
         setError("Failed to initialize voice call system");
@@ -183,14 +214,13 @@ export function WebCall({ agent }: WebCallProps) {
         silenceTimeoutSeconds: 30,
       });
       console.log("Call started successfully:", callResponse);
-      
+
       // Set a timeout to handle cases where call doesn't connect
       setTimeout(() => {
         if (callStatus === "Starting call...") {
           setCallStatus("Call connecting...");
         }
       }, 5000);
-
     } catch (err) {
       console.error("Failed to start call:", err);
       setError("Failed to start call. Please try again.");
@@ -211,7 +241,12 @@ export function WebCall({ agent }: WebCallProps) {
     setCallStatus("Call ended");
   };
 
-  const { toggleMute, toggleSpeaker } = vapiRef.current ? handleCallControls(vapiRef.current, isCallActive, isMuted, isSpeakerMuted, setIsMuted, setIsSpeakerMuted) : { toggleMute: () => {}, toggleSpeaker: () => {} };
+  const { toggleMute, toggleSpeaker } = vapiRef.current
+    ? handleCallControls(vapiRef.current, isCallActive, isMuted, isSpeakerMuted, setIsMuted, setIsSpeakerMuted)
+    : { toggleMute: () => {}, toggleSpeaker: () => {} };
+
+  const canToggleMute = isCallActive && !!vapiRef.current;
+  const canToggleSpeaker = isCallActive && typeof vapiRef.current?.setSpeakerMuted === "function";
 
   return (
     <Card>
@@ -220,9 +255,7 @@ export function WebCall({ agent }: WebCallProps) {
           <Phone className="mr-2 inline-block size-5" />
           Web Voice Call
         </CardTitle>
-        <CardDescription>
-          Test your assistant directly in the browser with voice conversation
-        </CardDescription>
+        <CardDescription>Test your assistant directly in the browser with voice conversation</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
@@ -231,21 +264,24 @@ export function WebCall({ agent }: WebCallProps) {
           </Alert>
         )}
 
-        <div className="text-center space-y-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="space-y-4 text-center">
+          <div className="text-muted-foreground text-sm">
             Status: <span className="font-medium">{callStatus}</span>
           </div>
 
           <div className="flex justify-center gap-3">
             {!isCallActive ? (
-              <Button 
-                onClick={startCall} 
-                size="lg" 
+              <Button
+                onClick={startCall}
+                size="lg"
                 disabled={!agent.vapi_assistant_id || !vapiRef.current || callStatus === "Not available"}
               >
                 <Phone className="mr-2 size-4" />
-                {callStatus === "Not available" ? "Not Available" : 
-                 callStatus === "Call failed" ? "Retry Call" : "Start Call"}
+                {callStatus === "Not available"
+                  ? "Not Available"
+                  : callStatus === "Call failed"
+                    ? "Retry Call"
+                    : "Start Call"}
               </Button>
             ) : (
               <>
@@ -253,10 +289,10 @@ export function WebCall({ agent }: WebCallProps) {
                   <PhoneOff className="mr-2 size-4" />
                   End Call
                 </Button>
-                <Button onClick={toggleMute} variant="outline" size="lg">
+                <Button onClick={toggleMute} variant="outline" size="lg" disabled={!canToggleMute}>
                   {isMuted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
                 </Button>
-                <Button onClick={toggleSpeaker} variant="outline" size="lg">
+                <Button onClick={toggleSpeaker} variant="outline" size="lg" disabled={!canToggleSpeaker}>
                   {isSpeakerMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
                 </Button>
               </>
@@ -264,7 +300,7 @@ export function WebCall({ agent }: WebCallProps) {
           </div>
 
           {isCallActive && (
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-muted-foreground space-y-1 text-xs">
               <p>• Speak naturally - the assistant will respond</p>
               <p>• Use the mute button to stop speaking</p>
               <p>• Use the speaker button to mute/unmute the assistant</p>
@@ -272,7 +308,7 @@ export function WebCall({ agent }: WebCallProps) {
           )}
 
           {!isCallActive && callStatus !== "Not available" && (
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-muted-foreground space-y-1 text-xs">
               <p>• Make sure your microphone is enabled</p>
               <p>• Speak clearly and wait for responses</p>
               <p>• Use the controls to manage the call</p>

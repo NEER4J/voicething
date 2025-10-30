@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import { useRouter, useParams } from "next/navigation";
+
 import { ArrowLeft, Edit, TestTube, Trash2, Save, X, Phone, Info } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +19,7 @@ import { AgentConfigDisplay } from "./_components/agent-config-display";
 import { AgentConfigEdit } from "./_components/agent-config-edit";
 import { WebCall } from "./_components/web-call";
 
+// eslint-disable-next-line complexity
 export default function AgentDetailPage() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +49,7 @@ export default function AgentDetailPage() {
             voice_id: data.voice_id,
             voice_name: data.voice_name,
             greeting_message: data.greeting_message,
+            system_prompt: data.system_prompt,
           });
         }
       } catch (error) {
@@ -64,16 +68,16 @@ export default function AgentDetailPage() {
 
     setIsSaving(true);
     try {
-        const result = await updateAgent(user.id, agentId, editedData);
-        if (result.success) {
-          toast.success("Agent updated successfully");
-          setIsEditing(false);
-          // Reload agent data
-          const updatedAgent = await getAgentById(user.id, agentId);
-          setAgent(updatedAgent);
-        } else {
-          toast.error(result.error ?? "Failed to update agent");
-        }
+      const result = await updateAgent(user.id, agentId, editedData);
+      if (result.success) {
+        toast.success("Agent updated successfully");
+        setIsEditing(false);
+        // Reload agent data
+        const updatedAgent = await getAgentById(user.id, agentId);
+        setAgent(updatedAgent);
+      } else {
+        toast.error(result.error ?? "Failed to update agent");
+      }
     } catch (error) {
       console.error("Error updating agent:", error);
       toast.error("Failed to update agent");
@@ -187,9 +191,7 @@ export default function AgentDetailPage() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-medium">{agent.name}</h1>
-          <Badge variant={agent.is_active ? "default" : "outline"}>
-            {agent.is_active ? "Active" : "Inactive"}
-          </Badge>
+          <Badge variant={agent.is_active ? "default" : "outline"}>{agent.is_active ? "Active" : "Inactive"}</Badge>
         </div>
         <p className="text-muted-foreground text-sm">
           Created on {new Date(agent.created_at).toLocaleDateString()} • Last updated{" "}
@@ -237,7 +239,8 @@ export default function AgentDetailPage() {
                   <Info className="size-4" />
                   <AlertTitle>Coming Soon</AlertTitle>
                   <AlertDescription>
-                    Phone call testing will be available soon. For now, you can test your assistant using the web interface.
+                    Phone call testing will be available soon. For now, you can test your assistant using the web
+                    interface.
                   </AlertDescription>
                 </Alert>
                 <Button className="w-full" disabled>
@@ -283,4 +286,3 @@ export default function AgentDetailPage() {
     </div>
   );
 }
-

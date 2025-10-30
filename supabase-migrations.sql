@@ -1,3 +1,16 @@
+-- Add system_prompt column for AI agents if it does not exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'ai_agents'
+      AND column_name = 'system_prompt'
+  ) THEN
+    ALTER TABLE public.ai_agents ADD COLUMN system_prompt text;
+  END IF;
+END $$;
+
 -- ============================================
 -- SUPABASE DATABASE SCHEMA & RLS POLICIES FIX
 -- ============================================

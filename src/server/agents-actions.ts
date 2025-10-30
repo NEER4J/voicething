@@ -1,8 +1,12 @@
 "use server";
+/* eslint-disable max-lines */
+/* eslint-disable max-depth */
+
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 import { SYSTEM_PROMPT_TEMPLATES, VOICE_OPTIONS, type Agent, type AgentFormData } from "@/types/agents";
-import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { getOrCreateUserRecord } from "./user-helpers";
 
 // Helper function to create Vapi assistant configuration
@@ -12,7 +16,7 @@ const createAssistantConfig = (formData: AgentFormData) => {
     throw new Error("Invalid voice selection");
   }
 
-  const systemPrompt = SYSTEM_PROMPT_TEMPLATES[formData.business_type];
+  const systemPrompt = formData.system_prompt ?? SYSTEM_PROMPT_TEMPLATES[formData.business_type];
   const languageConfig = formData.language === "arabic" ? { language: "ar-SA" } : { language: "en-US" };
 
   return {
@@ -35,11 +39,64 @@ const createAssistantConfig = (formData: AgentFormData) => {
     firstMessage: formData.greeting_message || "Hello! How can I help you today?",
     maxDurationSeconds: 180,
     endCallMessage: "Thank you for talking with me today. Have a great day!",
-    endCallPhrases: ["goodbye", "bye", "see you later", "talk to you later"],
+    endCallPhrases: [
+      "goodbye",
+      "bye",
+      "see you later",
+      "talk to you later",
+      "end the call",
+      "hang up",
+      "that's all",
+      "we're done",
+      "you can end now",
+    ],
     recordingEnabled: false,
     backgroundSound: "off",
     context: { enabled: true, maxLength: 50 },
   };
+};
+
+// Build a Vapi assistant update payload from partial agent updates
+// eslint-disable-next-line complexity
+const buildAssistantUpdatePayload = (formData: Partial<AgentFormData>) => {
+  const payload: Record<string, unknown> = {};
+
+  if (formData.name) payload.name = formData.name;
+
+  if (formData.system_prompt || formData.business_type) {
+    const systemPrompt =
+      formData.system_prompt ?? (formData.business_type ? SYSTEM_PROMPT_TEMPLATES[formData.business_type] : undefined);
+    payload.model = {
+      provider: "openai",
+      model: "gpt-3.5-turbo",
+      ...(systemPrompt ? { messages: [{ role: "system", content: systemPrompt }] } : {}),
+      temperature: 0.7,
+    };
+  }
+
+  if (formData.language) {
+    const languageConfig = formData.language === "arabic" ? { language: "ar-SA" } : { language: "en-US" };
+    payload.transcriber = {
+      provider: "deepgram",
+      model: "nova-2",
+      language: languageConfig.language,
+    };
+  }
+
+  if (formData.greeting_message !== undefined) {
+    payload.firstMessage = formData.greeting_message || "Hello! How can I help you today?";
+  }
+
+  // Map voice; keeping provider fixed as example
+  if (formData.voice_id || formData.voice_name) {
+    payload.voice = {
+      provider: "11labs",
+      // Note: project uses fixed voiceId in creation; if you want to map by id/name, adjust here
+      voiceId: "cgSgspJ2msm6clMCkdW9",
+    };
+  }
+
+  return payload;
 };
 
 // Create Vapi Assistant
@@ -109,6 +166,7 @@ export async function createAgent(
         voice_id: formData.voice_id,
         voice_name: formData.voice_name,
         greeting_message: formData.greeting_message,
+        system_prompt: formData.system_prompt,
         vapi_assistant_id: vapiResult.assistantId,
         is_active: true,
         created_at: new Date().toISOString(),
@@ -154,10 +212,7 @@ export async function getAgents(authUserId: string): Promise<Agent[]> {
 }
 
 // Get agent by ID
-export async function getAgentById(
-  authUserId: string,
-  agentId: string,
-): Promise<Agent | null> {
+export async function getAgentById(authUserId: string, agentId: string): Promise<Agent | null> {
   try {
     const supabase = await createClient();
     const userId = await getOrCreateUserRecord(authUserId);
@@ -182,6 +237,7 @@ export async function getAgentById(
 }
 
 // Update agent
+// eslint-disable-next-line complexity
 export async function updateAgent(
   authUserId: string,
   agentId: string,
@@ -190,6 +246,19 @@ export async function updateAgent(
   try {
     const supabase = await createClient();
     const userId = await getOrCreateUserRecord(authUserId);
+
+    // Fetch current agent to get vapi assistant id
+    const { data: existing, error: fetchError } = await supabase
+      .from("ai_agents")
+      .select("vapi_assistant_id")
+      .eq("id", agentId)
+      .eq("user_id", userId)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching agent before update:", fetchError);
+      return { success: false, error: fetchError.message };
+    }
 
     const { error } = await supabase
       .from("ai_agents")
@@ -205,6 +274,34 @@ export async function updateAgent(
       return { success: false, error: error.message };
     }
 
+    // Propagate updates to Vapi assistant if available
+    const vapiAssistantId: string | null = existing ? (existing.vapi_assistant_id ?? null) : null;
+    const apiKey = process.env.VAPI_API_KEY;
+    if (vapiAssistantId && apiKey) {
+      try {
+        const updatePayload = buildAssistantUpdatePayload(formData);
+        if (Object.keys(updatePayload).length > 0) {
+          const resp = await fetch(`https://api.vapi.ai/assistant/${vapiAssistantId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(updatePayload),
+          });
+          if (!resp.ok) {
+            const errData = await resp.json().catch(() => ({}));
+            console.error("Vapi assistant update failed:", errData);
+            // Do not fail DB update if Vapi update fails, but report error
+            return { success: false, error: "Updated locally, but failed to update voice assistant" };
+          }
+        }
+      } catch (e) {
+        console.error("Error updating Vapi assistant:", e);
+        return { success: false, error: "Updated locally, but failed to update voice assistant" };
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Error updating agent:", error);
@@ -213,10 +310,7 @@ export async function updateAgent(
 }
 
 // Delete agent (soft delete)
-export async function deleteAgent(
-  authUserId: string,
-  agentId: string,
-): Promise<{ success: boolean; error?: string }> {
+export async function deleteAgent(authUserId: string, agentId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();
     const userId = await getOrCreateUserRecord(authUserId);
@@ -274,12 +368,13 @@ const updateExistingDraft = async (
   supabase: SupabaseClient,
   draftId: string,
   userId: string,
-  draftData: Partial<AgentFormData>
+  draftData: Partial<AgentFormData>,
 ) => {
   const { error } = await supabase
     .from("ai_agents")
     .update({
       ...draftData,
+      system_prompt: draftData.system_prompt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", draftId)
@@ -294,11 +389,7 @@ const updateExistingDraft = async (
 };
 
 // Helper function to create new draft
-const createNewDraft = async (
-  supabase: SupabaseClient,
-  userId: string,
-  draftData: Partial<AgentFormData>
-) => {
+const createNewDraft = async (supabase: SupabaseClient, userId: string, draftData: Partial<AgentFormData>) => {
   const { data, error } = await supabase
     .from("ai_agents")
     .insert({
@@ -310,6 +401,7 @@ const createNewDraft = async (
       voice_id: draftData.voice_id ?? "elliot",
       voice_name: draftData.voice_name ?? "Elliot",
       greeting_message: draftData.greeting_message,
+      system_prompt: draftData.system_prompt,
       is_active: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -373,6 +465,7 @@ export async function completeDraftAgent(
         voice_id: formData.voice_id,
         voice_name: formData.voice_name,
         greeting_message: formData.greeting_message,
+        system_prompt: formData.system_prompt,
         vapi_assistant_id: vapiResult.assistantId,
         is_active: true,
         updated_at: new Date().toISOString(),
@@ -391,4 +484,3 @@ export async function completeDraftAgent(
     return { success: false, error: "Failed to complete agent setup" };
   }
 }
-

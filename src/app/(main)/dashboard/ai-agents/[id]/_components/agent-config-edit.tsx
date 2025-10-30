@@ -1,10 +1,19 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BUSINESS_TYPES, LANGUAGES, TONES, VOICE_OPTIONS, type Agent, type BusinessType, type Language, type Tone } from "@/types/agents";
+import {
+  BUSINESS_TYPES,
+  LANGUAGES,
+  TONES,
+  VOICE_OPTIONS,
+  type Agent,
+  type BusinessType,
+  type Language,
+  type Tone,
+} from "@/types/agents";
 
 interface AgentConfigEditProps {
   editedData: Partial<Agent>;
@@ -109,6 +118,17 @@ export function AgentConfigEdit({ editedData, setEditedData }: AgentConfigEditPr
           value={editedData.greeting_message ?? ""}
           onChange={(e) => setEditedData({ ...editedData, greeting_message: e.target.value })}
           className="min-h-[100px]"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="system_prompt">System Prompt (Advanced)</Label>
+        <Textarea
+          id="system_prompt"
+          value={editedData.system_prompt ?? ""}
+          onChange={(e) => setEditedData({ ...editedData, system_prompt: e.target.value })}
+          className="min-h-[140px]"
+          placeholder="Override the default business-type prompt. Leave empty to use template."
         />
       </div>
     </>
