@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 
 import { Command } from "lucide-react";
 
-import Silk from "@/components/silk";
 import { Separator } from "@/components/ui/separator";
 import { APP_CONFIG } from "@/config/app-config";
 
@@ -12,9 +11,9 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
       <div className="grid h-dvh justify-center p-2 lg:grid-cols-2">
         <div className="bg-primary relative order-2 hidden h-full overflow-hidden rounded-3xl lg:flex">
           {/* Silk background */}
-          <div className="absolute inset-0 z-0">
-            <Silk speed={3} scale={1} color="#5ca9ef" noiseIntensity={5} rotation={-1.2} />
-          </div>
+          {/* <div className="absolute inset-0 z-0">
+            <Silk speed={3} scale={1} color="#74ff84" noiseIntensity={5} rotation={-1.2} />
+          </div> */}
 
           {/* Content overlay */}
           <div className="relative z-10 flex w-full flex-col">

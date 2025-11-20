@@ -1,79 +1,18 @@
 "use client";
 
 import { Clock } from "lucide-react";
-import { FunnelChart, Funnel, LabelList } from "recharts";
+import { Line, LineChart, XAxis } from "recharts";
 
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
-import { ChartContainer } from "@/components/ui/chart";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
-import { callConversionChartData, callConversionChartConfig, platformMessagesData, aiActionItems } from "./crm.config";
+import { aiActionItems, callVolumeChartData, callVolumeChartConfig } from "./crm.config";
 
 export function OperationalCards() {
-  const totalMessages = platformMessagesData.reduce((sum, platform) => sum + platform.messages, 0);
   return (
-    <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:shadow-xs sm:grid-cols-2 xl:grid-cols-3">
-      <Card>
-        <CardHeader>
-          <CardTitle>Call Conversion Funnel</CardTitle>
-        </CardHeader>
-        <CardContent className="size-full">
-          <ChartContainer config={callConversionChartConfig} className="size-full">
-            <FunnelChart margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
-              <Funnel className="stroke-card stroke-2" dataKey="value" data={callConversionChartData}>
-                <LabelList className="fill-foreground stroke-0" dataKey="stage" position="right" offset={10} />
-                <LabelList className="fill-foreground stroke-0" dataKey="value" position="left" offset={10} />
-              </Funnel>
-            </FunnelChart>
-          </ChartContainer>
-        </CardContent>
-        <CardFooter>
-          <p className="text-muted-foreground text-xs">Call completion rate improved by 12.5% this week.</p>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Messages by Platform</CardTitle>
-          <CardDescription className="font-medium tabular-nums">{totalMessages} total messages</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2.5">
-            {platformMessagesData.map((platform) => (
-              <div key={platform.platform} className="space-y-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{platform.platform}</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-semibold tabular-nums">{platform.messages}</span>
-                    <span
-                      className={cn(
-                        "text-xs font-medium tabular-nums",
-                        platform.isPositive ? "text-green-500" : "text-destructive",
-                      )}
-                    >
-                      {platform.growth}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Progress value={platform.percentage} />
-                  <span className="text-muted-foreground text-xs font-medium tabular-nums">{platform.percentage}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-        <CardFooter>
-          <div className="text-muted-foreground flex justify-between gap-1 text-xs">
-            <span>{platformMessagesData.length} platforms active</span>
-            <span>•</span>
-            <span>{platformMessagesData.filter((p) => p.isPositive).length} platforms growing</span>
-          </div>
-        </CardFooter>
-      </Card>
-
+    <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:shadow-xs sm:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle>AI-Extracted Follow-ups</CardTitle>
@@ -105,6 +44,41 @@ export function OperationalCards() {
             ))}
           </ul>
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Call Volume Trend</CardTitle>
+          <CardDescription>Last 7 Days</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={callVolumeChartConfig} className="h-24 w-full">
+            <LineChart
+              data={callVolumeChartData}
+              margin={{
+                top: 5,
+                right: 10,
+                left: 10,
+                bottom: 0,
+              }}
+            >
+              <XAxis dataKey="day" tickLine={false} tickMargin={10} axisLine={false} hide />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line
+                type="monotone"
+                strokeWidth={2}
+                dataKey="calls"
+                stroke="var(--color-calls)"
+                activeDot={{
+                  r: 6,
+                }}
+              />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+        <CardFooter>
+          <p className="text-muted-foreground text-sm">+15% increase from last week</p>
+        </CardFooter>
       </Card>
     </div>
   );

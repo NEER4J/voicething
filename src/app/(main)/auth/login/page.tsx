@@ -4,6 +4,7 @@ import { Globe } from "lucide-react";
 
 import { LoginForm } from "@/app/(main)/auth/_components/login-form";
 import { GoogleButton } from "@/app/(main)/auth/_components/social-auth/google-button";
+import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/sidebar/theme-switcher";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { APP_CONFIG } from "@/config/app-config";
 
@@ -20,7 +21,22 @@ export default async function LoginV2({
 }) {
   const params = await searchParams;
   const error = Array.isArray(params.error) ? params.error[0] : params.error;
-  const errorMessage = error ? ERROR_MESSAGES[error] || "An error occurred. Please try again." : null;
+  let errorMessage: string | null = null;
+  if (error && typeof error === "string") {
+    switch (error) {
+      case "callback_error":
+        errorMessage = ERROR_MESSAGES.callback_error;
+        break;
+      case "session_missing":
+        errorMessage = ERROR_MESSAGES.session_missing;
+        break;
+      case "no_code":
+        errorMessage = ERROR_MESSAGES.no_code;
+        break;
+      default:
+        errorMessage = "An error occurred. Please try again.";
+    }
+  }
 
   return (
     <>
@@ -35,7 +51,7 @@ export default async function LoginV2({
           </Alert>
         )}
         <div className="space-y-4">
-          <GoogleButton className="w-full cursor-pointer bg-gray-100 hover:bg-gray-200" />
+          <GoogleButton />
           <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
             <span className="bg-background text-muted-foreground relative z-10 px-2">Or continue with</span>
           </div>
@@ -54,9 +70,12 @@ export default async function LoginV2({
 
       <div className="absolute bottom-5 flex w-full justify-between px-10">
         <div className="text-sm">{APP_CONFIG.copyright}</div>
-        <div className="flex items-center gap-1 text-sm">
-          <Globe className="text-muted-foreground size-4" />
-          ENG
+        <div className="flex items-center gap-3">
+          <ThemeSwitcher />
+          <div className="flex items-center gap-1 text-sm">
+            <Globe className="text-muted-foreground size-4" />
+            ENG
+          </div>
         </div>
       </div>
     </>

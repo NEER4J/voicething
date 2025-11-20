@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 import { useRouter, useParams } from "next/navigation";
 
-import { ArrowLeft, Edit, TestTube, Trash2, Save, X, Phone, Info } from "lucide-react";
+import { Edit, Trash2, Save, X, Phone, Info } from "lucide-react";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,6 +17,7 @@ import { BUSINESS_TYPES, LANGUAGES, TONES, type Agent } from "@/types/agents";
 
 import { AgentConfigDisplay } from "./_components/agent-config-display";
 import { AgentConfigEdit } from "./_components/agent-config-edit";
+import { CallHistory } from "./_components/call-history";
 import { WebCall } from "./_components/web-call";
 
 // eslint-disable-next-line complexity
@@ -136,10 +137,7 @@ export default function AgentDetailPage() {
           <h1 className="text-2xl font-medium">Agent Not Found</h1>
           <p className="text-muted-foreground mt-2 text-sm">The agent you&apos;re looking for doesn&apos;t exist.</p>
         </div>
-        <Button onClick={() => router.push("/dashboard/ai-agents")}>
-          <ArrowLeft />
-          Back to Agents
-        </Button>
+        <Button onClick={() => router.push("/dashboard/ai-agents")}>Go to Agents</Button>
       </div>
     );
   }
@@ -149,37 +147,46 @@ export default function AgentDetailPage() {
   const tone = TONES.find((t) => t.value === agent.tone);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.push("/dashboard/ai-agents")}>
-          <ArrowLeft />
-          Back to Agents
-        </Button>
+    <div className="size-full space-y-6 p-4 sm:p-6 lg:p-8">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold sm:text-3xl">{agent.name}</h1>
+            <Badge variant={agent.is_active ? "default" : "outline"} className="shrink-0">
+              {agent.is_active ? "Active" : "Inactive"}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Created {new Date(agent.created_at).toLocaleDateString()} • Updated{" "}
+            {new Date(agent.updated_at).toLocaleDateString()}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           {!isEditing && (
             <>
-              <Button onClick={() => setIsEditing(true)} variant="outline">
-                <Edit />
-                Edit
+              <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                <Edit className="size-4" />
+                <span className="hidden sm:inline">Edit</span>
               </Button>
-              <Button onClick={handleDelete} variant="outline" className="text-destructive">
-                <Trash2 />
+              <Button onClick={handleDelete} variant="outline" size="sm" className="text-destructive">
+                <Trash2 className="size-4" />
               </Button>
             </>
           )}
           {isEditing && (
             <>
-              <Button onClick={handleCancel} variant="outline" disabled={isSaving}>
-                <X />
-                Cancel
+              <Button onClick={handleCancel} variant="outline" size="sm" disabled={isSaving}>
+                <X className="size-4" />
+                <span className="hidden sm:inline">Cancel</span>
               </Button>
-              <Button onClick={handleSave} disabled={isSaving}>
+              <Button onClick={handleSave} size="sm" disabled={isSaving}>
                 {isSaving ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 ) : (
                   <>
-                    <Save />
-                    Save Changes
+                    <Save className="size-4" />
+                    <span className="hidden sm:inline">Save Changes</span>
                   </>
                 )}
               </Button>
@@ -188,101 +195,63 @@ export default function AgentDetailPage() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-medium">{agent.name}</h1>
-          <Badge variant={agent.is_active ? "default" : "outline"}>{agent.is_active ? "Active" : "Inactive"}</Badge>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Configuration Section - Takes 1 column on mobile, 1 column on lg */}
+        <div className="lg:col-span-1">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-lg">Configuration</CardTitle>
+              <CardDescription className="text-xs">
+                {isEditing ? "Edit your assistant's configuration" : "View your assistant's configuration"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!isEditing ? (
+                <AgentConfigDisplay agent={agent} businessType={businessType} language={language} tone={tone} />
+              ) : (
+                <AgentConfigEdit editedData={editedData} setEditedData={setEditedData} />
+              )}
+            </CardContent>
+          </Card>
         </div>
-        <p className="text-muted-foreground text-sm">
-          Created on {new Date(agent.created_at).toLocaleDateString()} • Last updated{" "}
-          {new Date(agent.updated_at).toLocaleDateString()}
-        </p>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuration</CardTitle>
-          <CardDescription>
-            {isEditing ? "Edit your assistant's configuration" : "View your assistant's configuration"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {!isEditing ? (
-            <AgentConfigDisplay agent={agent} businessType={businessType} language={language} tone={tone} />
-          ) : (
-            <AgentConfigEdit editedData={editedData} setEditedData={setEditedData} />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Test Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <TestTube className="mr-2 inline-block size-5" />
-            Test Your Assistant
-          </CardTitle>
-          <CardDescription>Try out your AI assistant to see how it performs</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+        {/* Testing Section - Takes full width on mobile, 2 columns on lg */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Test Cards Grid */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Phone Call Card */}
+            <Card className="flex flex-col">
               <CardHeader>
-                <CardTitle>
-                  <Phone className="mr-2 inline-block size-5" />
-                  Test via Phone Call
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Phone className="size-4" />
+                  Phone Call
                 </CardTitle>
-                <CardDescription>Call your assistant using a phone number</CardDescription>
+                <CardDescription className="text-xs">Call your assistant using a phone number</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Alert>
+              <CardContent className="flex flex-1 flex-col justify-between space-y-4">
+                <Alert className="border-muted">
                   <Info className="size-4" />
-                  <AlertTitle>Coming Soon</AlertTitle>
-                  <AlertDescription>
+                  <AlertTitle className="text-sm">Coming Soon</AlertTitle>
+                  <AlertDescription className="text-xs">
                     Phone call testing will be available soon. For now, you can test your assistant using the web
                     interface.
                   </AlertDescription>
                 </Alert>
-                <Button className="w-full" disabled>
+                <Button className="w-full" size="sm" disabled>
                   Coming Soon
                 </Button>
               </CardContent>
             </Card>
 
+            {/* Web Call Card */}
             <WebCall agent={agent} />
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Testing Tips</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Test in a quiet environment to ensure clear audio quality</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Try different scenarios relevant to your business type</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Listen for natural conversation flow and appropriate responses</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Test edge cases like background noise or unclear speech</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Verify the greeting message plays correctly</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-        </CardContent>
-      </Card>
+          {/* Call History Card */}
+          <CallHistory agent={agent} />
+        </div>
+      </div>
     </div>
   );
 }

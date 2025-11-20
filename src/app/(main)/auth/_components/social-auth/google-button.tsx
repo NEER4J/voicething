@@ -40,8 +40,17 @@ export function GoogleButton({ className, ...props }: React.ComponentProps<typeo
   };
 
   return (
-    <Button variant="secondary" className={cn(className)} onClick={handleGoogleSignIn} disabled={isLoading} {...props}>
-      <SimpleIcon icon={siGoogle} className="size-4 cursor-pointer" />
+    <Button
+      variant="outline"
+      className={cn(
+        "border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-card dark:border-input dark:hover:bg-accent/50 w-full",
+        className,
+      )}
+      onClick={handleGoogleSignIn}
+      disabled={isLoading}
+      {...props}
+    >
+      <SimpleIcon icon={siGoogle} className="size-4 shrink-0" />
       {isLoading ? "Signing in..." : "Continue with Google"}
     </Button>
   );

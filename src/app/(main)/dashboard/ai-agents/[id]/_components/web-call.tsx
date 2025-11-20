@@ -1,16 +1,17 @@
+/* eslint-disable max-lines */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { toast } from "sonner";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Agent } from "@/types/agents";
 import { useAuth } from "@/lib/auth/use-auth";
-import { getVapiCallTranscript, saveAgentTranscript, getAgentCallHistory, endVapiCall } from "@/server/agents-actions";
+import { saveAgentTranscript } from "@/server/agents-actions";
+import type { Agent } from "@/types/agents";
 
 interface WebCallProps {
   agent: Agent;
@@ -44,9 +45,9 @@ const safeStringify = (value: unknown): string => {
 };
 
 const extractErrorMessage = (err: unknown): string => {
-  if (err instanceof Error) return err.message || err.name;
+  if (err instanceof Error) return err.message ?? err.name;
   const asObj = err as { message?: string; error?: string; reason?: string } | undefined;
-  return asObj?.message || asObj?.error || asObj?.reason || String(err ?? "Unknown error");
+  return asObj?.message ?? asObj?.error ?? asObj?.reason ?? String(err ?? "Unknown error");
 };
 
 // Helper function to setup event listeners
@@ -164,38 +165,36 @@ const handleCallControls = (
   setIsSpeakerMuted: (muted: boolean) => void,
 ) => {
   const toggleMute = () => {
-    if (vapi && isCallActive) {
-      try {
-        if (isMuted) {
-          vapi.setMuted(false);
-          setIsMuted(false);
-        } else {
-          vapi.setMuted(true);
-          setIsMuted(true);
-        }
-      } catch (err) {
-        console.error("Error toggling mute:", err);
+    if (!isCallActive) return;
+    try {
+      if (isMuted) {
+        vapi.setMuted(false);
+        setIsMuted(false);
+      } else {
+        vapi.setMuted(true);
+        setIsMuted(true);
       }
+    } catch (err) {
+      console.error("Error toggling mute:", err);
     }
   };
 
   const toggleSpeaker = () => {
-    if (vapi && isCallActive) {
-      try {
-        if (typeof vapi.setSpeakerMuted !== "function") {
-          console.warn("setSpeakerMuted is not available on Vapi instance; disabling speaker toggle.");
-          return;
-        }
-        if (isSpeakerMuted) {
-          vapi.setSpeakerMuted(false);
-          setIsSpeakerMuted(false);
-        } else {
-          vapi.setSpeakerMuted(true);
-          setIsSpeakerMuted(true);
-        }
-      } catch (err) {
-        console.error("Error toggling speaker:", err);
+    if (!isCallActive) return;
+    try {
+      if (typeof vapi.setSpeakerMuted !== "function") {
+        console.warn("setSpeakerMuted is not available on Vapi instance; disabling speaker toggle.");
+        return;
       }
+      if (isSpeakerMuted) {
+        vapi.setSpeakerMuted(false);
+        setIsSpeakerMuted(false);
+      } else {
+        vapi.setSpeakerMuted(true);
+        setIsSpeakerMuted(true);
+      }
+    } catch (err) {
+      console.error("Error toggling speaker:", err);
     }
   };
 
@@ -223,98 +222,123 @@ export function WebCall({ agent }: WebCallProps) {
   const [partialTranscript, setPartialTranscript] = useState<{ user?: string; assistant?: string }>({});
   const liveTranscriptRef = useRef<TranscriptMessage[]>([]);
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
-  const [callId, setCallId] = useState<string | undefined>();
   const callIdRef = useRef<string | undefined>(undefined);
   const controlUrlRef = useRef<string | undefined>(undefined);
   const isTerminatingRef = useRef<boolean>(false);
 
-  type CallHistoryItem = {
-    id: string;
-    call_id: string | null;
-    transcript_text: string | null;
-    transcript_json: unknown | null;
-    duration_seconds: number | null;
-    created_at: string;
-  };
-
-  const [callHistory, setCallHistory] = useState<CallHistoryItem[]>([]);
-  const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-
-  const saveTranscriptToDb = async (transcriptData: TranscriptMessage[], vapiCallId: string) => {
-    console.log("saveTranscriptToDb called with", transcriptData.length, "messages");
-    if (!user?.id) {
-      console.error("No user ID available");
-      toast.error("User not authenticated");
-      return;
-    }
-
-    if (transcriptData.length === 0) {
-      console.log("No transcript messages to save");
-      toast.info("No conversation to save");
-      return;
-    }
-
-    setIsLoadingTranscript(true);
-    try {
-      setCallStatus("Saving transcript...");
-      const transcriptText = transcriptData
-        .map((msg) => `${msg.role === "assistant" ? "Assistant" : "You"}: ${msg.message}`)
-        .join("\n");
-
-      console.log("Saving transcript to DB...");
-      const saveResult = await saveAgentTranscript(user.id, agent.id, {
-        callId: vapiCallId,
-        transcriptText,
-        segments: transcriptData.map((msg) => ({
-          role: msg.role,
-          text: msg.message,
-          isFinal: true,
-          startedAt: msg.time?.toString(),
-        })),
-      });
-      console.log("Save transcript result:", saveResult);
-
-      if (saveResult.success) {
-        // Refresh call history
-        console.log("Refreshing call history...");
-        await loadCallHistory();
-        setCallStatus("Transcript saved");
-        toast.success(`Call transcript saved (${transcriptData.length} messages)`);
-      } else {
-        console.error("Failed to save transcript:", saveResult.error);
-        toast.error("Failed to save transcript: " + (saveResult.error || "Unknown error"));
+  const saveTranscriptToDb = useCallback(
+    async (transcriptData: TranscriptMessage[], vapiCallId: string) => {
+      console.log("saveTranscriptToDb called with", transcriptData.length, "messages");
+      if (!user?.id) {
+        console.error("No user ID available");
+        toast.error("User not authenticated");
+        return;
       }
-    } catch (err) {
-      console.error("Error saving transcript:", err);
-      setCallStatus("Failed to save transcript");
-      toast.error("Failed to save transcript: " + String(err));
-    } finally {
-      setIsLoadingTranscript(false);
-      // Reset terminating guard after post-call work
-      isTerminatingRef.current = false;
-    }
-  };
 
-  const loadCallHistory = async () => {
-    if (!user?.id) return;
-    setIsLoadingHistory(true);
-    try {
-      const result = await getAgentCallHistory(user.id, agent.id);
-      if (result.success && result.calls) {
-        setCallHistory(result.calls);
+      if (transcriptData.length === 0) {
+        console.log("No transcript messages to save");
+        toast.info("No conversation to save");
+        return;
       }
-    } catch (err) {
-      console.error("Error loading call history:", err);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  };
 
-  useEffect(() => {
-    // Load call history on mount
-    loadCallHistory();
-  }, [user?.id, agent.id]);
+      setIsLoadingTranscript(true);
+      try {
+        setCallStatus("Saving transcript...");
+        const transcriptText = transcriptData
+          .map((msg) => `${msg.role === "assistant" ? "Assistant" : "You"}: ${msg.message}`)
+          .join("\n");
+
+        console.log("Saving transcript to DB...");
+        const saveResult = await saveAgentTranscript(user.id, agent.id, {
+          callId: vapiCallId,
+          transcriptText,
+          segments: transcriptData.map((msg) => ({
+            role: msg.role,
+            text: msg.message,
+            isFinal: true,
+            startedAt: msg.time?.toString(),
+          })),
+        });
+        console.log("Save transcript result:", saveResult);
+
+        if (saveResult.success) {
+          setCallStatus("Transcript saved");
+          toast.success(`Call transcript saved (${transcriptData.length} messages)`);
+        } else {
+          console.error("Failed to save transcript:", saveResult.error);
+          toast.error("Failed to save transcript: " + (saveResult.error ?? "Unknown error"));
+        }
+      } catch (err) {
+        console.error("Error saving transcript:", err);
+        setCallStatus("Failed to save transcript");
+        toast.error("Failed to save transcript: " + String(err));
+      } finally {
+        setIsLoadingTranscript(false);
+        // Reset terminating guard after post-call work
+        isTerminatingRef.current = false;
+      }
+    },
+    [user?.id, agent.id],
+  );
+
+  // Extract callbacks to reduce complexity
+  const handleTranscript = useCallback((data: { role: string; message: string; isFinal: boolean }) => {
+    const role = data.role as "assistant" | "user";
+
+    if (data.isFinal) {
+      console.log("Final transcript received:", role, data.message);
+      const newMessage = {
+        role,
+        message: data.message,
+      };
+      liveTranscriptRef.current.push(newMessage);
+      setTranscript((prev) => [...prev, newMessage]);
+      setPartialTranscript((prev) => ({ ...prev, [role]: undefined }));
+    } else {
+      console.log("Partial transcript:", role, data.message);
+      setPartialTranscript((prev) => ({ ...prev, [role]: data.message }));
+    }
+  }, []);
+
+  const handleCallStart = useCallback((info?: unknown) => {
+    try {
+      const maybe = info as { id?: string; monitor?: { controlUrl?: string } } | undefined;
+      const vapiCallId = maybe?.id ?? `${Date.now()}`;
+      console.log("Call started with ID:", vapiCallId);
+      callIdRef.current = vapiCallId;
+      controlUrlRef.current = maybe?.monitor?.controlUrl;
+      setTranscript([]);
+      setPartialTranscript({});
+      liveTranscriptRef.current = [];
+    } catch {
+      const fallbackId = `${Date.now()}`;
+      callIdRef.current = fallbackId;
+      setTranscript([]);
+      setPartialTranscript({});
+      liveTranscriptRef.current = [];
+    }
+  }, []);
+
+  const handleCallEnd = useCallback(async () => {
+    try {
+      const currentCallId = callIdRef.current;
+      console.log("Call ended, saving live transcript. CallId:", currentCallId);
+      console.log("Captured messages:", liveTranscriptRef.current.length);
+
+      if (!currentCallId) {
+        console.warn("No callId available");
+        toast.error("No call ID available");
+        return;
+      }
+
+      const capturedTranscript = [...liveTranscriptRef.current];
+      setTranscript(capturedTranscript);
+      await saveTranscriptToDb(capturedTranscript, currentCallId);
+    } catch (e) {
+      console.error("Failed to save transcript:", e);
+      toast.error("Failed to save transcript");
+    }
+  }, [saveTranscriptToDb]);
 
   useEffect(() => {
     const initializeVapi = async () => {
@@ -350,71 +374,10 @@ export function WebCall({ agent }: WebCallProps) {
           setIsCallActive,
           setCallStatus,
           setError,
-          (data: { role: string; message: string; isFinal: boolean }) => {
-            // Capture live transcript from web call
-            const role = data.role as "assistant" | "user";
-            
-            if (data.isFinal) {
-              console.log("Final transcript received:", role, data.message);
-              const newMessage = {
-                role,
-                message: data.message,
-              };
-              liveTranscriptRef.current.push(newMessage);
-              // Update UI with finalized message
-              setTranscript((prev) => [...prev, newMessage]);
-              // Clear partial for this role
-              setPartialTranscript((prev) => ({ ...prev, [role]: undefined }));
-            } else {
-              // Show partial/interim transcript in real-time
-              console.log("Partial transcript:", role, data.message);
-              setPartialTranscript((prev) => ({ ...prev, [role]: data.message }));
-            }
-          },
-          (info?: unknown) => {
-            try {
-              const maybe = info as { id?: string; monitor?: { controlUrl?: string } } | undefined;
-              const vapiCallId = maybe?.id || `${Date.now()}`;
-              console.log("Call started with ID:", vapiCallId);
-              setCallId(vapiCallId);
-              callIdRef.current = vapiCallId;
-              controlUrlRef.current = maybe?.monitor?.controlUrl;
-              setTranscript([]); // Clear previous transcript
-              setPartialTranscript({}); // Clear partial transcript
-              liveTranscriptRef.current = []; // Clear live transcript buffer
-            } catch {
-              const fallbackId = `${Date.now()}`;
-              setCallId(fallbackId);
-              callIdRef.current = fallbackId;
-              setTranscript([]);
-              setPartialTranscript({});
-              liveTranscriptRef.current = [];
-            }
-          },
-          async () => {
-            // On call end, save captured live transcript
-            try {
-              const currentCallId = callIdRef.current;
-              console.log("Call ended, saving live transcript. CallId:", currentCallId);
-              console.log("Captured messages:", liveTranscriptRef.current.length);
-              
-              if (!currentCallId) {
-                console.warn("No callId available");
-                toast.error("No call ID available");
-                return;
-              }
-
-              const capturedTranscript = [...liveTranscriptRef.current];
-              setTranscript(capturedTranscript);
-              
-              // Save to DB
-              await saveTranscriptToDb(capturedTranscript, currentCallId);
-            } catch (e) {
-              console.error("Failed to save transcript:", e);
-              toast.error("Failed to save transcript");
-            }
-          },
-          undefined, // No finalizeDraft needed
+          handleTranscript,
+          handleCallStart,
+          handleCallEnd,
+          undefined,
           isTerminatingRef,
         );
       } catch (err) {
@@ -434,6 +397,30 @@ export function WebCall({ agent }: WebCallProps) {
         // ignore
       }
     };
+  }, [handleTranscript, handleCallStart, handleCallEnd, isCallActive]);
+
+  const checkMicrophonePermission = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    if (!window.isSecureContext) {
+      console.warn("WebCall: Not a secure context (https/local), microphone may fail");
+    }
+    if (navigator.mediaDevices?.getUserMedia) {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+  }, []);
+
+  const extractCallInfo = useCallback((callResponse: unknown) => {
+    try {
+      const info = callResponse as { id?: string; monitor?: { controlUrl?: string } } | undefined;
+      if (info?.id) {
+        callIdRef.current = info.id;
+      }
+      if (info?.monitor?.controlUrl) {
+        controlUrlRef.current = info.monitor.controlUrl;
+      }
+    } catch {
+      // Ignore errors when extracting call info
+    }
   }, []);
 
   const startCall = async () => {
@@ -442,18 +429,11 @@ export function WebCall({ agent }: WebCallProps) {
       return;
     }
 
-    // Preflight checks to surface common issues early
     try {
-      if (typeof window !== "undefined" && !window.isSecureContext) {
-        console.warn("WebCall: Not a secure context (https/local), microphone may fail");
-      }
-      // Ensure microphone permission prompts before SDK tries to start
-      if (navigator?.mediaDevices?.getUserMedia) {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      }
+      await checkMicrophonePermission();
     } catch (permErr) {
       const msg = extractErrorMessage(permErr);
-      setError(msg || "Microphone permission denied or not available");
+      setError(msg ?? "Microphone permission denied or not available");
       setCallStatus("Call failed");
       return;
     }
@@ -462,33 +442,21 @@ export function WebCall({ agent }: WebCallProps) {
       setError(null);
       setCallStatus("Starting call...");
 
-      // Start call using the assistant ID with tuned configuration to avoid unwanted cutoffs
       const callResponse = await vapiRef.current.start(agent.vapi_assistant_id, {
-        // Use sane, higher thresholds rather than 0 which some providers treat as immediate timeout
         customerJoinTimeoutSeconds: 120,
         silenceTimeoutSeconds: 120,
       });
       console.log("Call started successfully:", callResponse);
-      try {
-        const info = callResponse as { id?: string; monitor?: { controlUrl?: string } } | undefined;
-        if (info?.id) {
-          setCallId(info.id);
-          callIdRef.current = info.id;
-        }
-        if (info?.monitor?.controlUrl) controlUrlRef.current = info.monitor.controlUrl;
-      } catch {}
+      extractCallInfo(callResponse);
 
-      // Set a timeout to handle cases where call doesn't connect
       setTimeout(() => {
-        if (callStatus === "Starting call...") {
-          setCallStatus("Call connecting...");
-        }
+        setCallStatus((prev) => (prev === "Starting call..." ? "Call connecting..." : prev));
       }, 5000);
     } catch (err) {
       const msg = extractErrorMessage(err);
       const details = safeStringify(err);
       console.error("Failed to start call:", err, details);
-      setError(msg || "Failed to start call. Please try again.");
+      setError(msg ?? "Failed to start call. Please try again.");
       setCallStatus("Call failed");
     }
   };
@@ -610,32 +578,38 @@ export function WebCall({ agent }: WebCallProps) {
 
           {(transcript.length > 0 || Object.keys(partialTranscript).length > 0) && (
             <div className="text-left">
-              <div className="mt-4 text-sm font-medium">
-                {isCallActive ? "Live Transcript" : "Call Transcript"}
-              </div>
-              <div className="bg-muted/40 mt-2 max-h-64 overflow-auto rounded-md p-3 text-left" id="transcript-container">
+              <div className="mt-4 text-sm font-medium">{isCallActive ? "Live Transcript" : "Call Transcript"}</div>
+              <div
+                className="bg-muted/40 mt-2 max-h-64 overflow-auto rounded-md p-3 text-left"
+                id="transcript-container"
+              >
                 <div className="space-y-3">
-                  {transcript.map((msg, idx) => (
-                    <div key={idx} className="text-sm">
-                      <div className="text-muted-foreground mb-1 text-xs font-medium">
-                        {msg.role === "assistant" ? "Assistant" : "You"}
-                        {msg.time && <span className="ml-2">({msg.time.toFixed(1)}s)</span>}
+                  {transcript.map((msg, idx) => {
+                    const msgHash = `${msg.role}-${msg.message.substring(0, 30)}-${idx}`;
+                    return (
+                      <div key={msgHash} className="text-sm">
+                        <div className="text-muted-foreground mb-1 text-xs font-medium">
+                          {msg.role === "assistant" ? "Assistant" : "You"}
+                          {msg.time && <span className="ml-2">({msg.time.toFixed(1)}s)</span>}
+                        </div>
+                        <div className="bg-background/50 rounded-md p-2">{msg.message}</div>
                       </div>
-                      <div className="rounded-md bg-background/50 p-2">{msg.message}</div>
-                    </div>
-                  ))}
-                  
+                    );
+                  })}
+
                   {/* Show partial/interim transcripts in real-time */}
                   {partialTranscript.user && (
-                    <div className="text-sm animate-pulse">
+                    <div className="animate-pulse text-sm">
                       <div className="text-muted-foreground mb-1 text-xs font-medium">You (speaking...)</div>
-                      <div className="rounded-md bg-background/50 p-2 italic opacity-70">{partialTranscript.user}</div>
+                      <div className="bg-background/50 rounded-md p-2 italic opacity-70">{partialTranscript.user}</div>
                     </div>
                   )}
                   {partialTranscript.assistant && (
-                    <div className="text-sm animate-pulse">
+                    <div className="animate-pulse text-sm">
                       <div className="text-muted-foreground mb-1 text-xs font-medium">Assistant (speaking...)</div>
-                      <div className="rounded-md bg-background/50 p-2 italic opacity-70">{partialTranscript.assistant}</div>
+                      <div className="bg-background/50 rounded-md p-2 italic opacity-70">
+                        {partialTranscript.assistant}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -647,105 +621,6 @@ export function WebCall({ agent }: WebCallProps) {
             <div className="text-muted-foreground mt-4 text-center text-sm">
               <div className="mx-auto mb-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               Loading transcript...
-            </div>
-          )}
-
-          {/* Call History */}
-          {!isCallActive && (
-            <div className="mt-8 text-left">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-medium">Call History</h3>
-                <Button variant="outline" size="sm" onClick={loadCallHistory} disabled={isLoadingHistory}>
-                  {isLoadingHistory ? "Loading..." : "Refresh"}
-                </Button>
-              </div>
-
-              {isLoadingHistory ? (
-                <div className="text-muted-foreground flex items-center justify-center py-8 text-sm">
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Loading call history...
-                </div>
-              ) : callHistory.length === 0 ? (
-                <div className="bg-muted/40 rounded-md p-6 text-center">
-                  <p className="text-muted-foreground text-sm">No calls yet. Start a call to see history here.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {callHistory.map((call) => {
-                    const isExpanded = expandedCallId === call.id;
-                    // Parse transcript_json - it's stored as segments array
-                    let transcriptMessages: TranscriptMessage[] = [];
-                    try {
-                      if (call.transcript_json) {
-                        const segments = call.transcript_json as Array<{
-                          role: "user" | "assistant";
-                          text: string;
-                          isFinal?: boolean;
-                          startedAt?: string;
-                        }>;
-                        transcriptMessages = segments
-                          .filter((s) => s.text)
-                          .map((s) => ({
-                            role: s.role,
-                            message: s.text,
-                          }));
-                      }
-                    } catch (e) {
-                      console.error("Error parsing transcript JSON:", e);
-                    }
-                    const date = new Date(call.created_at);
-
-                    return (
-                      <div key={call.id} className="border rounded-md overflow-hidden">
-                        <button
-                          onClick={() => setExpandedCallId(isExpanded ? null : call.id)}
-                          className="bg-muted/30 hover:bg-muted/50 w-full px-4 py-3 text-left transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-wrap items-center gap-3 text-sm">
-                              <span>{date.toLocaleDateString()} {date.toLocaleTimeString()}</span>
-                              {call.duration_seconds && (
-                                <span className="text-muted-foreground text-xs">
-                                  {Math.floor(call.duration_seconds / 60)}m {call.duration_seconds % 60}s
-                                </span>
-                              )}
-                              {call.call_id && (
-                                <span className="font-mono text-xs">{call.call_id.substring(0, 12)}...</span>
-                              )}
-                              <span className="text-muted-foreground text-xs">
-                                {transcriptMessages.length} messages
-                              </span>
-                            </div>
-                            <span className="text-muted-foreground text-xs">{isExpanded ? "Hide" : "Show"}</span>
-                          </div>
-                        </button>
-
-                        {isExpanded && (
-                          <div className="bg-background p-4">
-                            <div className="space-y-3">
-                              {transcriptMessages.length > 0 ? (
-                                transcriptMessages.map((msg, idx) => (
-                                  <div key={idx} className="text-sm">
-                                    <div className="text-muted-foreground mb-1 text-xs font-medium">
-                                      {msg.role === "assistant" ? "Assistant" : "You"}
-                                      {msg.time && <span className="ml-2">({msg.time.toFixed(1)}s)</span>}
-                                    </div>
-                                    <div className="bg-muted/40 rounded-md p-2">{msg.message}</div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-muted-foreground text-sm">
-                                  {call.transcript_text || "No transcript available"}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
         </div>

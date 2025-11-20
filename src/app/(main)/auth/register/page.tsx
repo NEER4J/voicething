@@ -4,6 +4,7 @@ import { Globe } from "lucide-react";
 
 import { RegisterForm } from "@/app/(main)/auth/_components/register-form";
 import { GoogleButton } from "@/app/(main)/auth/_components/social-auth/google-button";
+import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/sidebar/theme-switcher";
 import { APP_CONFIG } from "@/config/app-config";
 
 export default function RegisterV2() {
@@ -34,9 +35,12 @@ export default function RegisterV2() {
 
       <div className="absolute bottom-5 flex w-full justify-between px-10">
         <div className="text-sm">{APP_CONFIG.copyright}</div>
-        <div className="flex items-center gap-1 text-sm">
-          <Globe className="text-muted-foreground size-4" />
-          ENG
+        <div className="flex items-center gap-3">
+          <ThemeSwitcher />
+          <div className="flex items-center gap-1 text-sm">
+            <Globe className="text-muted-foreground size-4" />
+            ENG
+          </div>
         </div>
       </div>
     </>

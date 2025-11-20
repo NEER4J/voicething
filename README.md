@@ -1,125 +1,159 @@
-# Next.js Admin Template with TypeScript & Shadcn UI
+# Voicething - AI Voice Agent Platform
 
-**Studio Admin** - Includes multiple dashboards, authentication layouts, customizable theme presets, and more.
+**Voicething** - Create, manage, and deploy intelligent AI voice assistants with advanced conversational capabilities.
 
-<img src="https://github.com/arhamkhnz/next-shadcn-admin-dashboard/blob/main/media/dashboard.png?version=5" alt="Dashboard Screenshot">
-
-Most admin templates I found, free or paid, felt cluttered, outdated, or too rigid. I built this as a cleaner alternative with features often missing in others, such as theme toggling and layout controls, while keeping the design modern, minimal, and flexible.
-
-I’ve taken design inspiration from various sources. If you’d like credit for something specific, feel free to open an issue or reach out.
-
-> **View demo:** [studio admin](https://next-shadcn-admin-dashboard.vercel.app)
-
-> [!TIP]
-> I’m also working on Nuxt.js, Svelte, and React (Vite + TanStack Router) versions of this dashboard. They’ll be live soon.
+Voicething is a powerful platform that enables businesses to build and deploy AI voice agents for customer service, sales, and support. Built with modern web technologies, it provides an intuitive interface for managing voice agents, handling calls, and integrating with multiple communication channels.
 
 ## Features
 
-- Built with Next.js 16, TypeScript, Tailwind CSS v4, and Shadcn UI  
-- Responsive and mobile-friendly  
-- Customizable theme presets (light/dark modes with color schemes like Tangerine, Brutalist, and more)  
-- Flexible layouts (collapsible sidebar, variable content widths)  
-- Authentication flows and screens  
-- Prebuilt dashboards (Default, CRM, Finance) with more coming soon  
-- Role-Based Access Control (RBAC) with config-driven UI and multi-tenant support *(planned)*  
-
-> [!NOTE]
-> The default dashboard uses the **shadcn neutral** theme.  
-> It also includes additional color presets inspired by [Tweakcn](https://tweakcn.com):  
->
-> - Tangerine  
-> - Neo Brutalism  
-> - Soft Pop  
->
-> You can create more presets by following the same structure as the existing ones.
-
-> Looking for the **Next.js 15** version?  
-> Check out the [`archive/next15`](https://github.com/arhamkhnz/next-shadcn-admin-dashboard/tree/archive/next15) branch.  
-> This branch contains the setup prior to upgrading to Next 16 and the React Compiler.
-
-> Looking for the **Next.js 14 + Tailwind CSS v3** version?  
-> Check out the [`archive/next14-tailwindv3`](https://github.com/arhamkhnz/next-shadcn-admin-dashboard/tree/archive/next14-tailwindv3) branch.  
-> It has a different color theme and is not actively maintained, but I try to keep it updated with major changes.  
+- **AI Agents Management** - Create, configure, and manage AI voice agents with a multi-step setup wizard
+- **Voice Integration** - Powered by Vapi AI with ElevenLabs voices and Deepgram transcription
+- **Multi-Channel Support** - Integrate with SMS, WhatsApp, Telegram, and more
+- **Call Management** - Track call history, voicemails, and conversation analytics
+- **Onboarding Flow** - Guided setup process for new users (business info, phone setup, voice selection, channels)
+- **Authentication** - Secure authentication with Supabase (email/password and OAuth)
+- **Responsive Design** - Mobile-first, fully responsive interface
+- **Customizable Themes** - Light/dark modes with multiple color presets (Tangerine, Neo Brutalism, Soft Pop)
+- **Flexible Layouts** - Collapsible sidebar and customizable content widths
+- **Real-time Testing** - Test your voice agents directly from the dashboard using Vapi Web SDK
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4  
-- **UI Components**: Shadcn UI  
-- **Validation**: Zod  
-- **Forms & State Management**: React Hook Form, Zustand  
-- **Tables & Data Handling**: TanStack Table  
-- **Tooling & DX**: ESLint, Prettier, Husky  
-
-## Screens
-
-### Available
-- Default Dashboard  
-- CRM Dashboard  
-- Finance Dashboard  
-- Authentication (4 screens)
-
-### Coming Soon
-- Analytics Dashboard  
-- eCommerce Dashboard  
-- Academy Dashboard  
-- Logistics Dashboard  
-- Email Page  
-- Chat Page  
-- Calendar Page  
-- Kanban Board  
-- Invoice Page  
-- Users Management  
-- Roles Management  
-
-## Colocation File System Architecture
-
-This project follows a **colocation-based architecture** each feature keeps its own pages, components, and logic inside its route folder.  
-Shared UI, hooks, and configuration live at the top level, making the codebase modular, scalable, and easier to maintain as the app grows.
-
-For a full breakdown of the structure with examples, see the [Next Colocation Template](https://github.com/arhamkhnz/next-colocation-template).
+- **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4
+- **UI Components**: Shadcn UI
+- **Backend & Database**: Supabase (PostgreSQL with Row Level Security)
+- **Voice AI**: Vapi AI, ElevenLabs, Deepgram
+- **Validation**: Zod
+- **Forms & State Management**: React Hook Form, Zustand
+- **Tables & Data Handling**: TanStack Table, TanStack React Query
+- **3D Graphics**: React Three Fiber, Three.js
+- **Tooling & DX**: ESLint, Prettier, Husky
 
 ## Getting Started
 
-You can run this project locally, or deploy it instantly with Vercel.
+### Prerequisites
 
-### Deploy with Vercel
+- Node.js 18+ and npm
+- A Supabase account and project
+- Vapi AI API keys (for voice agent functionality)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farhamkhnz%2Fnext-shadcn-admin-dashboard)
-
-_Deploy your own copy with one click._
-
-### Run locally
+### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/arhamkhnz/next-shadcn-admin-dashboard.git
-   ```
-   
-2. **Navigate into the project**
-   ```bash
-    cd next-shadcn-admin-dashboard
-   ```
-   
-3. **Install dependencies**
-   ```bash
-    npm install
+   git clone <repository-url>
+   cd voicething
    ```
 
-4. **Start the development server**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+
+   Create a `.env.local` file in the root directory:
+   ```env
+   # Supabase
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+   # Vapi AI
+   VAPI_API_KEY=your_vapi_api_key_here
+   VAPI_API_URL=https://api.vapi.ai
+   NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_vapi_public_key_here
+   ```
+
+4. **Set up the database**
+
+   - Go to your Supabase dashboard
+   - Navigate to **SQL Editor**
+   - Run the migrations from `supabase-migrations.sql` and `ai-agents-migration.sql`
+
+   See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed instructions.
+
+5. **Start the development server**
    ```bash
    npm run dev
    ```
 
-Your app will be running at [http://localhost:3000](http://localhost:3000)
+   Your app will be running at [http://localhost:3000](http://localhost:3000)
+
+## Project Structure
+
+This project follows a **colocation-based architecture** where each feature keeps its own pages, components, and logic inside its route folder. Shared UI, hooks, and configuration live at the top level, making the codebase modular, scalable, and easier to maintain.
+
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── (main)/            # Main application routes
+│   │   ├── auth/          # Authentication pages
+│   │   ├── dashboard/     # Dashboard and AI agents
+│   │   └── onboarding/    # User onboarding flow
+│   └── (external)/         # External/public pages
+├── components/             # Shared UI components
+├── lib/                    # Utilities and helpers
+├── server/                 # Server actions
+├── types/                  # TypeScript type definitions
+└── config/                 # App configuration
+```
+
+## Key Features in Detail
+
+### AI Agents
+
+Create and manage AI voice agents with:
+- Multi-step setup wizard (Basics, Personality & Voice, Preview)
+- Business type-specific configurations
+- Voice selection (Elliot, Rachel, Adam, Bella, Josh)
+- Tone customization (Professional, Friendly, Casual, Formal)
+- Real-time testing with web-based voice calls
+- Full CRUD operations with data tables
+
+### Onboarding
+
+Guided onboarding process includes:
+1. Welcome
+2. Business Information
+3. Phone Setup
+4. Voice Selection
+5. Communication Channels
+6. Test Assistant
+
+### Authentication
+
+- Email/password authentication
+- OAuth providers (Google)
+- Email verification
+- Password reset flow
+- Protected routes with middleware
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+
+## Documentation
+
+- [Supabase Setup Guide](./SUPABASE_SETUP.md) - Database and authentication setup
+- [AI Agents Setup Guide](./AI_AGENTS_SETUP_GUIDE.md) - AI agents feature documentation
+- [OAuth Debug Guide](./OAUTH_DEBUG_GUIDE.md) - Troubleshooting OAuth issues
+- [OAuth Troubleshooting](./OAUTH_TROUBLESHOOTING.md) - Common OAuth problems and solutions
+
+## Contributing
+
+Contributions are welcome! Please feel free to open issues, feature requests, or submit pull requests.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## License
+
+See [LICENSE](./LICENSE) for details.
 
 ---
 
-> [!IMPORTANT]  
-> This project is updated frequently. If you’re working from a fork or an older clone, pull the latest changes before syncing. Some updates may include breaking changes.
-
----
-
-Contributions are welcome. Feel free to open issues, feature requests, or start a discussion.
-
-
-**Happy Vibe Coding!**
+**Happy Building!** 🚀
