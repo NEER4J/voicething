@@ -1,7 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { createClient } from "@/lib/supabase/server";
 
 // Helper functions to get user ID from auth (copied from onboarding-actions.ts)
 export async function getUserData(supabase: SupabaseClient) {
@@ -15,7 +16,8 @@ export async function getUserData(supabase: SupabaseClient) {
   }
 
   const userEmail = user.email ?? "";
-  const userName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email.split("@")[0] ?? "User";
+  const userName =
+    user.user_metadata?.full_name ?? user.user_metadata?.name ?? (userEmail ? userEmail.split("@")[0] : "User");
 
   return { userEmail, userName };
 }

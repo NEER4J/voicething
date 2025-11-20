@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
+
 import { useRouter } from "next/navigation";
+
+import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth/use-auth";
 import { completeDraftAgent, saveDraftAgent } from "@/server/agents-actions";
@@ -18,7 +20,7 @@ const saveDraft = async (
   userId: string,
   updatedData: Partial<AgentFormData>,
   draftId: string | undefined,
-  setDraftId: (id: string) => void
+  setDraftId: (id: string) => void,
 ) => {
   const result = await saveDraftAgent(userId, updatedData, draftId);
   if (result.success && result.draftId) {
@@ -32,12 +34,17 @@ const saveDraft = async (
 
 // Helper function to validate form data
 const validateFormData = (formData: Partial<AgentFormData>) => {
-  const requiredFields = ['name', 'business_type', 'language', 'tone', 'voice_id', 'voice_name'];
-  return requiredFields.every(field => formData[field as keyof AgentFormData]);
+  const requiredFields = ["name", "business_type", "language", "tone", "voice_id", "voice_name"];
+  return requiredFields.every((field) => formData[field as keyof AgentFormData]);
 };
 
 // Helper function to create agent
-const createAgent = async (userId: string, draftId: string, formData: AgentFormData, router: ReturnType<typeof useRouter>) => {
+const createAgent = async (
+  userId: string,
+  draftId: string,
+  formData: AgentFormData,
+  router: ReturnType<typeof useRouter>,
+) => {
   const result = await completeDraftAgent(userId, draftId, formData);
   if (result.success) {
     toast.success("Assistant created successfully!", {
@@ -67,7 +74,7 @@ export default function SetupPage() {
       setFormData(updatedData);
 
       if (user?.id) {
-        await saveDraft(user.id, updatedData, draftId, setDraftId, toast);
+        await saveDraft(user.id, updatedData, draftId, setDraftId);
       }
 
       setCurrentStep(SetupStep.PERSONALITY);
@@ -85,7 +92,7 @@ export default function SetupPage() {
       setFormData(updatedData);
 
       if (user?.id) {
-        await saveDraft(user.id, updatedData, draftId, setDraftId, toast);
+        await saveDraft(user.id, updatedData, draftId, setDraftId);
       }
 
       setCurrentStep(SetupStep.PREVIEW);
@@ -164,4 +171,3 @@ export default function SetupPage() {
     </div>
   );
 }
-
