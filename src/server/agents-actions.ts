@@ -539,6 +539,7 @@ export async function saveAgentTranscript(
   }
 }
 
+// eslint-disable-next-line complexity
 export async function getVapiCallTranscript(
   authUserId: string,
   agentId: string,
@@ -633,6 +634,79 @@ export async function getAgentCallHistory(
     return { success: true, calls: data ?? [] };
   } catch (error) {
     console.error("Error fetching call history:", error);
+    return { success: false, error: "Failed to fetch call history" };
+  }
+}
+
+export async function getAllUserCalls(authUserId: string): Promise<{
+  success: boolean;
+  calls?: Array<{
+    id: string;
+    call_id: string | null;
+    transcript_text: string | null;
+    transcript_json: unknown | null;
+    duration_seconds: number | null;
+    created_at: string;
+    agent_id: string;
+    agent_name: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const userId = await getOrCreateUserRecord(authUserId);
+
+    // Fetch all calls for the user
+    const { data: calls, error: callsError } = await supabase
+      .from("ai_agent_transcripts")
+      .select("id, call_id, transcript_text, transcript_json, duration_seconds, created_at, agent_id")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (callsError) {
+      return { success: false, error: callsError.message };
+    }
+
+    if (!calls || calls.length === 0) {
+      return { success: true, calls: [] };
+    }
+
+    // Get unique agent IDs
+    const agentIds = [...new Set(calls.map((call) => call.agent_id))];
+
+    // Fetch agent names
+    const { data: agents, error: agentsError } = await supabase
+      .from("ai_agents")
+      .select("id, name")
+      .in("id", agentIds)
+      .eq("user_id", userId);
+
+    if (agentsError) {
+      return { success: false, error: agentsError.message };
+    }
+
+    // Create a map of agent ID to name
+    const agentMap = new Map<string, string>();
+    (agents ?? []).forEach((agent) => {
+      agentMap.set(agent.id, agent.name);
+    });
+
+    // Combine calls with agent names
+    const callsWithAgentName = calls.map((call) => ({
+      id: call.id,
+      call_id: call.call_id,
+      transcript_text: call.transcript_text,
+      transcript_json: call.transcript_json,
+      duration_seconds: call.duration_seconds,
+      created_at: call.created_at,
+      agent_id: call.agent_id,
+      agent_name: agentMap.get(call.agent_id) ?? "Unknown Agent",
+    }));
+
+    return { success: true, calls: callsWithAgentName };
+  } catch (error) {
+    console.error("Error fetching all user calls:", error);
     return { success: false, error: "Failed to fetch call history" };
   }
 }
